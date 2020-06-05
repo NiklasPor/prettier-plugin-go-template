@@ -9,6 +9,7 @@ const closingBrackets = "}}";
 
 const openingBracketsRegex = new RegExp(openingBrackets, "g");
 const closingBracketsRegex = new RegExp(closingBrackets, "g");
+const doubleBracketsRegex = new RegExp(closingBrackets + openingBrackets, "g");
 
 const openingBracketsReplacement = `<!--${uniqueID}`;
 const closingBracketsReplacement = `${uniqueID}-->`;
@@ -17,15 +18,19 @@ export const parsers = {
   "go-template": <Parser>{
     ...htmlParser,
     astFormat: "go-template",
-    preprocess: text => {
+    preprocess: (text) => {
       let result = text;
 
+      result = result.replace(
+        doubleBracketsRegex,
+        `${closingBrackets} ${openingBrackets}`
+      );
       result = result.replace(openingBracketsRegex, openingBracketsReplacement);
       result = result.replace(closingBracketsRegex, closingBracketsReplacement);
 
       return result;
-    }
-  }
+    },
+  },
 };
 
 export const languages: SupportLanguage[] = [
@@ -40,11 +45,11 @@ export const languages: SupportLanguage[] = [
       ".tmpl",
       ".tpl",
       ".html.tmpl",
-      ".html.tpl"
+      ".html.tpl",
     ],
     vscodeLanguageIds: ["gotemplate", "gohtml"],
-    aceMode: "html"
-  }
+    aceMode: "html",
+  },
 ];
 
 export const printers = {
@@ -54,10 +59,10 @@ export const printers = {
     },
     embed: (_, __, textToDoc, options) => {
       const htmlDoc = textToDoc(options.originalText, {
-        parser: "html"
+        parser: "html",
       });
 
-      const mappedDoc = doc.utils.mapDoc(htmlDoc, docLeaf => {
+      const mappedDoc = doc.utils.mapDoc(htmlDoc, (docLeaf) => {
         if (typeof docLeaf !== "string") {
           return docLeaf;
         }
@@ -71,6 +76,6 @@ export const printers = {
       });
 
       return mappedDoc;
-    }
-  }
+    },
+  },
 };

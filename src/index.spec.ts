@@ -3,7 +3,7 @@ import * as prettier from "prettier";
 const prettify = (code: string) =>
   prettier.format(code, {
     parser: "go-template" as any,
-    plugins: ["lib"]
+    plugins: ["lib"],
   });
 
 interface CodeTestCase {
@@ -24,7 +24,7 @@ This is an article. <br />
 This is an article. <br />
 {{ . }}
 {{ end }}
-`
+`,
   },
   {
     name: "Basic Template",
@@ -35,11 +35,18 @@ This is an article. Name: {{ .article.name }}
 This is an article. Name:
 {{ .article.name }}
 {{ end }}
-`
-  }
+`,
+  },
+  {
+    name: "Duplicate Without Space",
+    code: `{{ define "page" }}{{ .article.name }}`,
+    expectedCode: `{{ define "page" }}
+{{ .article.name }}
+`,
+  },
 ];
 
-tests.forEach(test =>
+tests.forEach((test) =>
   it(test.name, () => {
     const formatted = prettify(test.code);
 
