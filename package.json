@@ -1,0 +1,52 @@
+{
+  "name": "prettier-plugin-go-template",
+  "version": "0.0.1-alpha",
+  "description": "Fixes prettier formatting for go templates.",
+  "license": "MIT",
+  "repository": "",
+  "author": {
+    "name": "Niklas Portmann",
+    "email": "niklaspor@gmail.com"
+  },
+  "keywords": [
+    "prettier",
+    "plugin",
+    "go",
+    "template",
+    "html"
+  ],
+  "files": [
+    "lib"
+  ],
+  "main": "lib/index",
+  "types": "lib/index",
+  "scripts": {
+    "test": "jest",
+    "coverage": "jest --coverage",
+    "build": "tsc --pretty",
+    "watch": "npm run build -- --watch",
+    "watch:test": "jest --watch",
+    "release": "npm run build && npm release"
+  },
+  "peerDependencies": {
+    "prettier": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^23.3.3",
+    "@types/node": "^14.0.11",
+    "jest": "^23.6.0",
+    "prettier": "^2.0.5",
+    "@types/prettier": "^2.0.1",
+    "ts-jest": "^23.10.3",
+    "ts-node": "^8.10.2",
+    "tslint": "^6.1.2",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.9.5"
+  },
+  "engines": {
+    "node": ">=10.0.0"
+  },
+  "jest": {
+    "preset": "ts-jest"
+  }
+}

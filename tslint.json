@@ -1,0 +1,9 @@
+{
+  "extends": ["tslint:latest", "tslint-config-prettier"],
+  "rules": {
+    "no-angle-bracket-type-assertion": false,
+    "no-object-literal-type-assertion": false,
+    "object-literal-sort-keys": false,
+    "interface-name": false
+  }
+}
