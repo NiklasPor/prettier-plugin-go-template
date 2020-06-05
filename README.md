@@ -7,4 +7,4 @@ npm install --save-dev prettier-plugin-go-template
 ```
 
 The following file types are detected automatically:
-`.go.html`, `.gohtml`, `.gotmpl`, `.go.tmpl`, `.tmpl`
+`.gohtml`, `.gotmpl`, `.go.tmpl`, `.tmpl`, `.tpl`, `.html.tmpl`
