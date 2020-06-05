@@ -32,7 +32,18 @@ export const languages: SupportLanguage[] = [
   {
     name: "GoTemplate",
     parsers: ["go-template"],
-    extensions: [".go.html", ".gohtml", ".gotmpl", ".go.tmpl", ".tmpl"]
+    extensions: [
+      ".go.html",
+      ".gohtml",
+      ".gotmpl",
+      ".go.tmpl",
+      ".tmpl",
+      ".tpl",
+      ".html.tmpl",
+      ".html.tpl"
+    ],
+    vscodeLanguageIds: ["gotemplate", "gohtml"],
+    aceMode: "html"
   }
 ];
 
