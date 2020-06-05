@@ -3,7 +3,10 @@
   "version": "0.0.1-alpha",
   "description": "Fixes prettier formatting for go templates.",
   "license": "MIT",
-  "repository": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NiklasPor/prettier-plugin-go-template"
+  },
   "author": {
     "name": "Niklas Portmann",
     "email": "niklaspor@gmail.com"
