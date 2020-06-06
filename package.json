@@ -1,6 +1,6 @@
 {
   "name": "prettier-plugin-go-template",
-  "version": "0.0.1-alpha-7",
+  "version": "0.0.1",
   "description": "Fixes prettier formatting for go templates.",
   "license": "MIT",
   "repository": {
@@ -31,7 +31,8 @@
     "build": "tsc --pretty",
     "watch": "npm run build -- --watch",
     "watch:test": "jest --watch",
-    "release": "npm run build && npm publish"
+    "release:plugin": "npm run build && npm publish",
+    "release": "npm run release:coverage && npm run release:plugin"
   },
   "peerDependencies": {
     "prettier": "^2.0.0"
