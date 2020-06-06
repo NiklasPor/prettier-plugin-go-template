@@ -47,8 +47,7 @@ export const languages: SupportLanguage[] = [
       ".html.tmpl",
       ".html.tpl",
     ],
-    vscodeLanguageIds: ["gotemplate", "gohtml"],
-    aceMode: "html",
+    vscodeLanguageIds: ["gotemplate", "gohtml", "GoTemplate", "GoHTML"],
   },
 ];
 
