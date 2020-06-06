@@ -41,7 +41,7 @@
     "codecov": "^3.7.0",
     "@types/jest": "^23.3.3",
     "@types/node": "^14.0.11",
-    "jest": "^23.6.0",
+    "jest": "^26.0.1",
     "prettier": "^2.0.5",
     "@types/prettier": "^2.0.1",
     "ts-jest": "^23.10.3",
