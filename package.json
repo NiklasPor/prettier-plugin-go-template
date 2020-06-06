@@ -26,6 +26,8 @@
   "scripts": {
     "test": "jest",
     "coverage": "jest --coverage",
+    "publish:coverage": "codecov -t $npm_config_prettier_plugin_go_html_codecov",
+    "release:coverage": "npm run coverage && npm run publish:coverage",
     "build": "tsc --pretty",
     "watch": "npm run build -- --watch",
     "watch:test": "jest --watch",
@@ -35,6 +37,7 @@
     "prettier": "^2.0.0"
   },
   "devDependencies": {
+    "codecov": "^3.7.0",
     "@types/jest": "^23.3.3",
     "@types/node": "^14.0.11",
     "jest": "^23.6.0",

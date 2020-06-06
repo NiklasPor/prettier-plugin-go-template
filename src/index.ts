@@ -61,9 +61,6 @@ export const languages: SupportLanguage[] = [
 
 export const printers = {
   "go-template": <Printer>{
-    print: () => {
-      return "";
-    },
     embed: (_, __, textToDoc, options) => {
       const htmlDoc = textToDoc(options.originalText, {
         parser: "html",
