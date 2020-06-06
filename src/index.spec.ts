@@ -44,6 +44,12 @@ This is an article. Name:
 {{ .article.name }}
 `,
   },
+  {
+    name: "Multiple Single Line Statements",
+    code: `<img class="{{ if eq $index 1 }} row-span-1 {{ else }} row-span-2 {{ end }}"/>`,
+    expectedCode: `<img class="{{ if eq $index 1 }} row-span-1 {{ else }} row-span-2 {{ end }}" />
+`,
+  },
 ];
 
 tests.forEach((test) =>

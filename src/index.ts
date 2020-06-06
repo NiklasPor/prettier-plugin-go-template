@@ -6,13 +6,21 @@ const uniqueID = "prettier-go-template-aefce456-67bb-4fbf-93fe-3d026c24bb1d";
 
 const openingBrackets = "{{";
 const closingBrackets = "}}";
+const openingBracketsReplacement = `<!--${uniqueID}`;
+const closingBracketsReplacement = `${uniqueID}-->`;
 
 const openingBracketsRegex = new RegExp(openingBrackets, "g");
 const closingBracketsRegex = new RegExp(closingBrackets, "g");
 const doubleBracketsRegex = new RegExp(closingBrackets + openingBrackets, "g");
 
-const openingBracketsReplacement = `<!--${uniqueID}`;
-const closingBracketsReplacement = `${uniqueID}-->`;
+const openingBracketsReplacementRegex = new RegExp(
+  openingBracketsReplacement,
+  "g"
+);
+const closingBracketsReplacementRegex = new RegExp(
+  closingBracketsReplacement,
+  "g"
+);
 
 export const parsers = {
   "go-template": <Parser>{
@@ -68,8 +76,14 @@ export const printers = {
 
         let result = docLeaf;
 
-        result = result.replace(openingBracketsReplacement, openingBrackets);
-        result = result.replace(closingBracketsReplacement, closingBrackets);
+        result = result.replace(
+          openingBracketsReplacementRegex,
+          openingBrackets
+        );
+        result = result.replace(
+          closingBracketsReplacementRegex,
+          closingBrackets
+        );
 
         return result;
       });
