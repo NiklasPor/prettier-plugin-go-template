@@ -50,6 +50,12 @@ This is an article. Name:
     expectedCode: `<img class="{{ if eq $index 1 }} row-span-1 {{ else }} row-span-2 {{ end }}" />
 `,
   },
+  {
+    name: "Attribute Replacement",
+    code: `<meta property="og:url" content="{{ strings.TrimSuffix "/" .Permalink }}" />`,
+    expectedCode: `<meta property="og:url" content="{{ strings.TrimSuffix "/" .Permalink }}" />
+`,
+  },
 ];
 
 tests.forEach((test) =>
