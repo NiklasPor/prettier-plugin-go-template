@@ -2,16 +2,20 @@ import { doc, Parser, Printer, SupportLanguage } from "prettier";
 import { parsers as htmlParsers } from "prettier/parser-html";
 
 const htmlParser = htmlParsers.html;
-const uniqueID = "prettier-go-template-aefce456-67bb-4fbf-93fe-3d026c24bb1d";
+const uniqueID = "pgt-a30fz9";
+const uniquePrefix = "pgt-b30fz9";
+const uniqueSuffix = "pgt-c30fz9";
 
 const openingBrackets = "{{";
 const closingBrackets = "}}";
 const openingBracketsReplacement = `<!--${uniqueID}`;
 const closingBracketsReplacement = `${uniqueID}-->`;
 
+const uniqueSuffixRegex = new RegExp(uniqueSuffix, "g");
+const uniquePrefixRegex = new RegExp(uniquePrefix, "g");
 const openingBracketsRegex = new RegExp(openingBrackets, "g");
 const closingBracketsRegex = new RegExp(closingBrackets, "g");
-const doubleBracketsRegex = new RegExp(closingBrackets + openingBrackets, "g");
+const closingBracketsNewlineRegex = new RegExp(closingBrackets + " *\n", "g");
 
 const openingBracketsReplacementRegex = new RegExp(
   openingBracketsReplacement,
@@ -30,11 +34,19 @@ export const parsers = {
       let result = text;
 
       result = result.replace(
-        doubleBracketsRegex,
-        `${closingBrackets} ${openingBrackets}`
+        openingBracketsRegex,
+        uniquePrefix + openingBracketsReplacement
       );
-      result = result.replace(openingBracketsRegex, openingBracketsReplacement);
-      result = result.replace(closingBracketsRegex, closingBracketsReplacement);
+
+      result = result.replace(
+        closingBracketsNewlineRegex,
+        closingBracketsReplacement + "\n"
+      );
+
+      result = result.replace(
+        closingBracketsRegex,
+        closingBracketsReplacement + uniqueSuffix
+      );
 
       return result;
     },
@@ -77,10 +89,14 @@ export const printers = {
           openingBracketsReplacementRegex,
           openingBrackets
         );
+
         result = result.replace(
           closingBracketsReplacementRegex,
           closingBrackets
         );
+
+        result = result.replace(uniqueSuffixRegex, "");
+        result = result.replace(uniquePrefixRegex, "");
 
         return result;
       });
