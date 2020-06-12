@@ -11,8 +11,18 @@ npm install --save-dev prettier-plugin-go-template
 The following file types are detected automatically:
 `.gohtml`, `.gotmpl`, `.go.tmpl`, `.tmpl`, `.tpl`, `.html.tmpl`
 
-## GoHugo
+## GoHugo / `.html`
 
-GoHugo currently does **not** support other extensions than `.html` inside the lookup order: [GoHugo Issue.](https://github.com/gohugoio/hugo/issues/3230)
-
-It is still possible to include `.gohtml` files by using them as a partial inside `.html` files, but not as default files in the lookup order.
+To use it with GoHugo and basic `.html` files, you'll have to override the used parser inside your `.prettierrc` file:
+```
+{
+  "overrides": [
+    {
+      "files": ["*.html"],
+      "options": {
+        "parser": "go-template"
+      }
+    }
+  ]
+}
+```
