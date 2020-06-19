@@ -1,54 +1,47 @@
 import { doc, Parser, Printer, SupportLanguage } from "prettier";
 import { parsers as htmlParsers } from "prettier/parser-html";
 
+function stringHashcode(input: string): number {
+  var hash = 0,
+    i,
+    chr;
+  for (i = 0; i < input.length; i++) {
+    chr = input.charCodeAt(i);
+    hash = (hash << 5) - hash + chr;
+    hash |= 0;
+  }
+  return hash;
+}
+
 const htmlParser = htmlParsers.html;
-const uniqueID = "pgt-a30fz9";
-const uniquePrefix = "pgt-b30fz9";
-const uniqueSuffix = "pgt-c30fz9";
+const buildReplacement = (input: string) => `BPGT${stringHashcode(input)}EPGT`;
 
-const openingBrackets = "{{";
-const closingBrackets = "}}";
-const openingBracketsReplacement = `<!--${uniqueID}`;
-const closingBracketsReplacement = `${uniqueID}-->`;
-
-const uniqueSuffixRegex = new RegExp(uniqueSuffix, "g");
-const uniquePrefixRegex = new RegExp(uniquePrefix, "g");
-const openingBracketsRegex = new RegExp(openingBrackets, "g");
-const closingBracketsRegex = new RegExp(closingBrackets, "g");
-const closingBracketsNewlineRegex = new RegExp(closingBrackets + " *\n", "g");
-
-const openingBracketsReplacementRegex = new RegExp(
-  openingBracketsReplacement,
-  "g"
-);
-const closingBracketsReplacementRegex = new RegExp(
-  closingBracketsReplacement,
-  "g"
-);
+const replacements = new Map<string, string>();
 
 export const parsers = {
   "go-template": <Parser>{
     ...htmlParser,
     astFormat: "go-template",
     preprocess: (text) => {
-      let result = text;
+      const regexp = /(?:{{.*?}}(?: *\n)?)|(?:<script(?:\n|.)*?>)((?:\n|.)*?)(?:<\/script>)/g;
 
-      result = result.replace(
-        openingBracketsRegex,
-        uniquePrefix + openingBracketsReplacement
-      );
+      let replacedText = text.trim();
+      let match: RegExpExecArray | null;
+      // tslint:disable-next-line: no-conditional-assignment
+      while ((match = regexp.exec(text)) != null) {
+        const result = match[0];
 
-      result = result.replace(
-        closingBracketsNewlineRegex,
-        closingBracketsReplacement + "\n"
-      );
+        if (!result.includes("{{")) {
+          continue;
+        }
 
-      result = result.replace(
-        closingBracketsRegex,
-        closingBracketsReplacement + uniqueSuffix
-      );
+        const replacement = buildReplacement(result);
+        replacedText = replacedText.replace(result, replacement);
+        const resultCleanedWhitespace = result.replace(/ *\n/g, "\n");
+        replacements.set(replacement, resultCleanedWhitespace);
+      }
 
-      return result;
+      return replacedText;
     },
   },
 };
@@ -83,20 +76,19 @@ export const printers = {
           return docLeaf;
         }
 
+        const regexp = /BPGT.*?EPGT/g;
+
         let result = docLeaf;
+        let match: RegExpExecArray | null;
+        // tslint:disable-next-line: no-conditional-assignment
+        while ((match = regexp.exec(docLeaf)) != null) {
+          const hash = match[0];
+          const replacement = replacements.get(hash);
 
-        result = result.replace(
-          openingBracketsReplacementRegex,
-          openingBrackets
-        );
-
-        result = result.replace(
-          closingBracketsReplacementRegex,
-          closingBrackets
-        );
-
-        result = result.replace(uniqueSuffixRegex, "");
-        result = result.replace(uniquePrefixRegex, "");
+          if (replacement) {
+            result = result.replace(hash, replacement);
+          }
+        }
 
         return result;
       });
