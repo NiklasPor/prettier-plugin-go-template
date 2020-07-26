@@ -11,18 +11,29 @@ npm install --save-dev prettier-plugin-go-template
 The following file types are detected automatically:
 `.gohtml`, `.gotmpl`, `.go.tmpl`, `.tmpl`, `.tpl`, `.html.tmpl`
 
-## GoHugo / `.html`
+## GoHugo / `.html` settings for Prettier
 
 To use it with GoHugo and basic `.html` files, you'll have to override the used parser inside your `.prettierrc` file:
-```
+
+**JSON**
+```json
 {
   "overrides": [
     {
-      "files": ["*.html"],
+      "files": "*.html",
       "options": {
         "parser": "go-template"
       }
     }
   ]
 }
+```
+
+**YAML**
+```yaml
+overrides:
+  - files: "*.html"
+    options:
+      parser: "go-template"
+
 ```
