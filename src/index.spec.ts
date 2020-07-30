@@ -1,9 +1,10 @@
 import * as prettier from "prettier";
+import * as GoTemplatePlugin from "./index";
 
 const prettify = (code: string) =>
   prettier.format(code, {
     parser: "go-template" as any,
-    plugins: ["lib"],
+    plugins: [GoTemplatePlugin],
   });
 
 interface CodeTestCase {
