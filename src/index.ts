@@ -37,8 +37,13 @@ export const parsers = {
 
         const replacement = buildReplacement(result);
         replacedText = replacedText.replace(result, replacement);
-        const resultCleanedWhitespace = result.replace(/ *\n/g, "\n");
-        replacements.set(replacement, resultCleanedWhitespace);
+
+        const cleanedResult = result
+          .replace(/{{[ \t]*/g, "{{ ")
+          .replace(/[ \t]*}}/g, " }}")
+          .replace(/ *\n/g, "\n");
+
+        replacements.set(replacement, cleanedResult);
       }
 
       return replacedText;
@@ -71,6 +76,8 @@ export const printers = {
         parser: "html",
       });
 
+      const replacedHashes: string[] = [];
+
       const mappedDoc = doc.utils.mapDoc(htmlDoc, (docLeaf) => {
         if (typeof docLeaf !== "string") {
           return docLeaf;
@@ -80,18 +87,23 @@ export const printers = {
 
         let result = docLeaf;
         let match: RegExpExecArray | null;
+
         // tslint:disable-next-line: no-conditional-assignment
         while ((match = regexp.exec(docLeaf)) != null) {
           const hash = match[0];
+
           const replacement = replacements.get(hash);
 
           if (replacement) {
             result = result.replace(hash, replacement);
+            replacedHashes.push(hash);
           }
         }
 
         return result;
       });
+
+      replacedHashes.forEach((hash) => replacements.delete(hash));
 
       return mappedDoc;
     },

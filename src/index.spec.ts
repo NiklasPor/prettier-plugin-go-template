@@ -191,6 +191,16 @@ This is an article. Name: {{ .article.name }}
 </script>
 `,
   },
+  {
+    name: "Bracket Spacing",
+    code: `{{   define "some"}}
+{{   . }}
+{{end}} `,
+    expectedCode: `{{ define "some" }}
+{{ . }}
+{{ end }}
+`,
+  },
 ];
 
 tests.forEach((test) =>
