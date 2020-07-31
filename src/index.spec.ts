@@ -201,6 +201,16 @@ This is an article. Name: {{ .article.name }}
 {{ end }}
 `,
   },
+  {
+    name: "Bracket Spacing with Hyphens",
+    code: `{{-  define "some"-}}
+{{   . }}
+{{-end-}} `,
+    expectedCode: `{{- define "some" -}}
+{{ . }}
+{{- end -}}
+`,
+  },
 ];
 
 tests.forEach((test) =>

@@ -39,8 +39,10 @@ export const parsers = {
         replacedText = replacedText.replace(result, replacement);
 
         const cleanedResult = result
-          .replace(/{{[ \t]*/g, "{{ ")
-          .replace(/[ \t]*}}/g, " }}")
+          .replace(/{{(?!-)[ \t]*/g, "{{ ")
+          .replace(/[ \t]*(?<!-)}}/g, " }}")
+          .replace(/{{-[ \t]*/g, "{{- ")
+          .replace(/[ \t]*-}}/g, " -}}")
           .replace(/ *\n/g, "\n");
 
         replacements.set(replacement, cleanedResult);
