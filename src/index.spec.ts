@@ -211,6 +211,14 @@ This is an article. Name: {{ .article.name }}
 {{- end -}}
 `,
   },
+  {
+    name: "Empty Bracket Spacing doesn't Break",
+    code: `{{ }}
+{{      }}`,
+    expectedCode: `{{ }}
+{{ }}
+`,
+  },
 ];
 
 tests.forEach((test) =>
