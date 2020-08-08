@@ -27,7 +27,7 @@ To use it with GoHugo and basic `.html` files, you'll have to override the used 
 }
 ```
 
-## VsCode
+## VSCode
 
 Make sure to always have installed **both** dependencies:
 - prettier
