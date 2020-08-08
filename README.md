@@ -26,3 +26,12 @@ To use it with GoHugo and basic `.html` files, you'll have to override the used 
   ]
 }
 ```
+
+## VsCode
+
+Make sure to always have installed **both** dependencies:
+- prettier
+- prettier-plugin-go-template
+
+Also make sure that they are installed inside the same scope.
+Install both globally (`npm i -g`) or locally – otherwise prettier may not pick up the plugin.
