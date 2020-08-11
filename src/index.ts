@@ -39,10 +39,18 @@ export const parsers = {
         replacedText = replacedText.replace(result, replacement);
 
         const cleanedResult = result
-          .replace(/{{(?!-)[ \t]*/g, "{{ ")
-          .replace(/[ \t]*(?<!-)}}/g, " }}")
+          // clean except for hyphens and shortcodes
+          .replace(/{{(?![-<])[ \t]*/g, "{{ ")
+          .replace(/[ \t]*(?<![->])}}/g, " }}")
+
+          // clean hyphens
           .replace(/{{-[ \t]*/g, "{{- ")
           .replace(/[ \t]*-}}/g, " -}}")
+
+          // clean shortcodes, e.g. "{{<    year    >}}" -> "{{< year >}}"
+          .replace(/{{<[ \t]*/g, "{{< ")
+          .replace(/[ \t]*>}}/g, " >}}")
+
           .replace(/ *\n/g, "\n");
 
         replacements.set(replacement, cleanedResult);

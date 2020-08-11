@@ -19,7 +19,7 @@ const tests: CodeTestCase[] = [
     code: `{{ define "page" }}
 This is an article. <br />
 {{ . }}
-{{ end }}       
+{{ end }}
 `,
     expectedCode: `{{ define "page" }}
 This is an article. <br />
@@ -31,7 +31,7 @@ This is an article. <br />
     name: "Simple Template + Value after Variable",
     code: `{{ define "page" }} This is an article. <br />
 {{ . }}
-{{ end }}       
+{{ end }}
 `,
     expectedCode: `{{ define "page" }} This is an article. <br />
 {{ . }}
@@ -210,6 +210,15 @@ This is an article. Name: {{ .article.name }}
 {{ . }}
 {{- end -}}
 `,
+  },
+  {
+    name: "Bracket Spacing with shortcodes",
+    code: `{{<     youtube 09jf3ow9jfw   >}}
+{{<  img src="/media/spf13.jpg" title="Blah"     >}}
+`,
+    expectedCode: `{{< youtube 09jf3ow9jfw >}}
+{{< img src="/media/spf13.jpg" title="Blah" >}}
+`
   },
   {
     name: "Empty Bracket Spacing doesn't Break",
