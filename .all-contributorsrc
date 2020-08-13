@@ -15,6 +15,15 @@
         "test",
         "code"
       ]
+    },
+    {
+      "login": "gabrielmaldi",
+      "name": "Gabriel Monteagudo",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/3728897?v=4",
+      "profile": "https://www.gabrielmaldi.com",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "badgeTemplate": "",
