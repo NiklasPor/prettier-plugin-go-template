@@ -17,6 +17,7 @@
       ]
     }
   ],
+  "badgeTemplate": "",
   "contributorsPerLine": 7,
   "projectName": "prettier-plugin-go-template",
   "projectOwner": "NiklasPor",
