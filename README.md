@@ -14,6 +14,7 @@ The following file types are detected automatically:
 ## GoHugo / `.html`
 
 To use it with GoHugo and basic `.html` files, you'll have to override the used parser inside your `.prettierrc` file:
+
 ```
 {
   "overrides": [
@@ -30,8 +31,15 @@ To use it with GoHugo and basic `.html` files, you'll have to override the used 
 ## VSCode
 
 Make sure to always have installed **both** dependencies:
+
 - prettier
 - prettier-plugin-go-template
 
 Also make sure that they are installed inside the same scope.
 Install both globally (`npm i -g`) or locally – otherwise prettier may not pick up the plugin.
+
+## Changelog
+
+### v0.0.7
+
+- Fix broken shortcodes. Thanks to @alqu for discovering & fixing the bug.
