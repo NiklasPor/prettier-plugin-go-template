@@ -65,7 +65,21 @@ export const parsers = {
 
         replacedText = replacedText.replace(result, replacement);
 
-        replacements.set(replacement, cleanedResult);
+        const forceLinebreak = !!replacedText.match(
+          new RegExp(`^[ \t]*${replacement}[ \t]*$`, "gm")
+        );
+
+        if (forceLinebreak && !replacement.includes("<")) {
+          const linebreakReplacement = `<!--BPGT${replacement}EPGT-->`;
+
+          replacedText = replacedText.replace(
+            replacement,
+            linebreakReplacement
+          );
+          replacements.set(linebreakReplacement, cleanedResult);
+        } else {
+          replacements.set(replacement, cleanedResult);
+        }
       }
 
       if (blockHashes.length > 0) {
@@ -96,7 +110,7 @@ export const languages: SupportLanguage[] = [
 ];
 
 function replaceSingles(input: string, replacedHashes = new Array<string>()) {
-  const regexp = /BPGT.*?EPGT/g;
+  const regexp = /(?:<!--BPGT)?BPGT.*?EPGT(?:EPGT-->)?/g;
 
   let result = input;
   let match: RegExpExecArray | null;
