@@ -1,12 +1,17 @@
 import { doc, Parser, Printer, SupportLanguage } from "prettier";
 import { parsers as htmlParsers } from "prettier/parser-html";
-import * as uuid from "uuid";
 
 const blockHashes = new Array<string>();
-
 const htmlParser = htmlParsers.html;
+
+let _id = 0;
+const getId = () => {
+  _id = _id + (1 % Number.MAX_SAFE_INTEGER);
+  return _id.toString();
+};
+
 const buildReplacement = (input: string) => {
-  const id = uuid.v4().replace(/-/g, "");
+  const id = getId();
 
   if (input.match(/{{[-<]? (?:if|range|block|with|define)/)) {
     blockHashes.push(id);
@@ -27,7 +32,8 @@ export const parsers = {
     ...htmlParser,
     astFormat: "go-template",
     preprocess: (text) => {
-      const regexp = /(?:{{.*?}}(?: *\n)?)|(?:<script(?:\n|.)*?>)((?:\n|.)*?)(?:<\/script>)/g;
+      //
+      const regexp = /(?:{{.*?}})|(?:<script(?:\n|.)*?>)((?:\n|.)*?)(?:<\/script>)/gm;
 
       let replacedText = text.trim();
       let match: RegExpExecArray | null;
@@ -52,12 +58,18 @@ export const parsers = {
           .replace(/{{<[ \t]*/g, "{{< ")
           .replace(/[ \t]*>}}/g, " >}}")
 
-          .replace(/ *\n/g, "\n");
+          .replace(/ *\n/g, "\n")
+          .trim();
 
         const replacement = buildReplacement(cleanedResult);
+
         replacedText = replacedText.replace(result, replacement);
 
         replacements.set(replacement, cleanedResult);
+      }
+
+      if (blockHashes.length > 0) {
+        throw Error("Missing ending block.");
       }
 
       return replacedText;
@@ -107,34 +119,36 @@ function replaceSingles(input: string, replacedHashes = new Array<string>()) {
 let lastWasOpenClosingTag = false;
 
 function replaceBlocks(input: string, replacedHashes = new Array<string>()) {
-  const openingTag = (input.match(/<BPGT.*EPGT>/) ?? [])[0];
-  const fullClosingTag = (input.match(/<\/BPGT.*EPGT>/) ?? [])[0];
-  const openClosingTag = (input.match(/<\/BPGT.*EPGT/) ?? [])[0];
+  let result = input;
 
-  if (openingTag) {
+  const openingTags = input.match(/<BPGT.*?EPGT>/) ?? [];
+  const fullClosingTags = input.match(/<\/BPGT.*?EPGT>/) ?? [];
+  const openClosingTag = (input.match(/<\/BPGT.*?EPGT(?!>)/) ?? [])[0];
+
+  openingTags.forEach((openingTag) => {
     replacedHashes.push(openingTag);
-    return input.replace(openingTag, replacements.get(openingTag)!);
-  }
+    result = result.replace(openingTag, replacements.get(openingTag)!);
+  });
 
-  if (fullClosingTag) {
+  fullClosingTags.forEach((fullClosingTag) => {
     replacedHashes.push(fullClosingTag);
-    return input.replace(fullClosingTag, replacements.get(fullClosingTag)!);
-  }
+    result = result.replace(fullClosingTag, replacements.get(fullClosingTag)!);
+  });
 
   if (openClosingTag) {
     const fixedClosingTag = openClosingTag + ">";
     lastWasOpenClosingTag = true;
 
     replacedHashes.push(fixedClosingTag);
-    return input.replace(openClosingTag, replacements.get(fixedClosingTag)!);
+    result = input.replace(openClosingTag, replacements.get(fixedClosingTag)!);
   }
 
-  if (lastWasOpenClosingTag && input.trim() === ">") {
+  if (lastWasOpenClosingTag && input.match(/[\t ]*>/)) {
     lastWasOpenClosingTag = false;
-    return "";
+    result = input.replace(/[\t ]*>/, "");
   }
 
-  return input;
+  return result;
 }
 
 export const printers = {

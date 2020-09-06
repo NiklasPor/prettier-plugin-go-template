@@ -22,8 +22,8 @@ This is an article. <br />
 {{ end }}
 `,
     expectedCode: `{{ define "page" }}
-This is an article. <br />
-{{ . }}
+  This is an article. <br />
+  {{ . }}
 {{ end }}
 `,
   },
@@ -33,8 +33,9 @@ This is an article. <br />
 {{ . }}
 {{ end }}
 `,
-    expectedCode: `{{ define "page" }} This is an article. <br />
-{{ . }}
+    expectedCode: `{{ define "page" }}
+  This is an article. <br />
+  {{ . }}
 {{ end }}
 `,
   },
@@ -44,14 +45,14 @@ This is an article. <br />
 This is an article. Name: {{ .article.name }}
 {{ end }}`,
     expectedCode: `{{ define "page" }}
-This is an article. Name: {{ .article.name }}
+  This is an article. Name: {{ .article.name }}
 {{ end }}
 `,
   },
   {
     name: "Duplicate Without Space",
-    code: `{{ define "page" }}{{ .article.name }}`,
-    expectedCode: `{{ define "page" }}{{ .article.name }}
+    code: `{{ template "page" }}{{ .article.name }}`,
+    expectedCode: `{{ template "page" }}{{ .article.name }}
 `,
   },
   {
@@ -168,7 +169,7 @@ This is an article. Name: {{ .article.name }}
     expectedCode: `{{ $sassOptions := (dict "targetPath" "css/main.css" "outputStyle" (cond .Site.Params.Minify "compressed" "expanded") "enableSourceMap" (not hugo.IsProduction)) }}
 {{ $css := resources.Match "sass/*.scss" | resources.Concat "" | resources.ExecuteAsTemplate "" . | toCSS $sassOptions }}
 {{ if $.Site.Params.Minify }}
-{{ $css = $css | fingerprint "sha512" }}
+  {{ $css = $css | fingerprint "sha512" }}
 {{ end }}
 <link
   rel="stylesheet"
@@ -183,7 +184,7 @@ This is an article. Name: {{ .article.name }}
 ></script>
 {{ $analytics := resources.Get "js/analytics.js" | babel (dict "config" "babel.config.json" "verbose" true) | minify | fingerprint "sha512" }}
 {{ if ne $analytics.Data.Integrity "sha512-0LVjmruu9Umzscdy8OR21j2JModpt/NfJnMnR82jGVQXBeamQnJMZIw97GTyxA/Ul0rjS8wfva5wcAPedlE+Zw==" }}
-{{ errorf "analytics.js has a new SHA: %q" $analytics.Data.Integrity }}
+  {{ errorf "analytics.js has a new SHA: %q" $analytics.Data.Integrity }}
 {{ end }}
 
 <script>
@@ -197,7 +198,7 @@ This is an article. Name: {{ .article.name }}
 {{   . }}
 {{end}} `,
     expectedCode: `{{ define "some" }}
-{{ . }}
+  {{ . }}
 {{ end }}
 `,
   },
@@ -207,7 +208,7 @@ This is an article. Name: {{ .article.name }}
 {{   . }}
 {{-end-}} `,
     expectedCode: `{{- define "some" -}}
-{{ . }}
+  {{ . }}
 {{- end -}}
 `,
   },
@@ -221,11 +222,12 @@ This is an article. Name: {{ .article.name }}
 `,
   },
   {
-    name: "Empty Bracket Spacing doesn't Break",
-    code: `{{ }}
-{{      }}`,
-    expectedCode: `{{ }}
-{{ }}
+    name: "Bracket Spacing doesn't Break",
+    code: `{{ keyword }}
+{{   keyword   }}
+`,
+    expectedCode: `{{ keyword }}
+{{ keyword }}
 `,
   },
   {
@@ -234,7 +236,7 @@ This is an article. Name: {{ .article.name }}
     {{   . }}
 {{-end-}} `,
     expectedCode: `{{- define "some" -}}
- {{ . }}
+  {{ . }}
 {{- end -}}
 `,
   },
