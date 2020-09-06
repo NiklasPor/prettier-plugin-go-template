@@ -240,6 +240,26 @@ This is an article. Name: {{ .article.name }}
 {{- end -}}
 `,
   },
+  {
+    name: "Advanced Blocks",
+    code: `{{ define "main" }}
+  {{ range .Pages }}
+    <article>
+  <h1><a href="{{ .Permalink }}">{{ .Title }}</a></h1>
+  {{ .Content }}
+    </article>
+    {{ end }}
+  {{ end }}`,
+    expectedCode: `{{ define "main" }}
+  {{ range .Pages }}
+    <article>
+      <h1><a href="{{ .Permalink }}">{{ .Title }}</a></h1>
+      {{ .Content }}
+    </article>
+  {{ end }}
+{{ end }}
+`,
+  },
 ];
 
 tests.forEach((test) =>
