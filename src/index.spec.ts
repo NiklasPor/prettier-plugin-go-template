@@ -243,13 +243,13 @@ This is an article. Name: {{ .article.name }}
   {
     name: "Advanced Blocks",
     code: `{{ define "main" }}
-  {{ range .Pages }}
-    <article>
-  <h1><a href="{{ .Permalink }}">{{ .Title }}</a></h1>
-  {{ .Content }}
-    </article>
-    {{ end }}
-  {{ end }}`,
+{{ range .Pages }}
+<article>
+<h1><a href="{{ .Permalink }}">{{ .Title }}</a></h1>
+{{ .Content }}
+</article>
+{{ end }}
+{{ end }}`,
     expectedCode: `{{ define "main" }}
   {{ range .Pages }}
     <article>
