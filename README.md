@@ -40,6 +40,15 @@ Install both globally (`npm i -g`) or locally – otherwise prettier may not pic
 
 ## Changelog
 
+### v0.0.9
+
+- Resolve bug of single line if statements.
+
+### v0.0.8
+
+- Go block statements will now be indented accordingly. Except for `else`.
+  - if, range, block, with, define, end
+
 ### v0.0.7
 
 - Fix broken shortcodes. Thanks to @alqu for discovering & fixing the bug.
@@ -60,6 +69,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 
 <!-- markdownlint-enable -->
 <!-- prettier-ignore-end -->
+
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!

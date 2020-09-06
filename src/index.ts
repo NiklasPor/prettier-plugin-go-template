@@ -130,19 +130,33 @@ function replaceSingles(input: string, replacedHashes = new Array<string>()) {
   return result;
 }
 
-let lastWasOpenClosingTag = false;
+let lastMissedBracket = false;
 
 function replaceBlocks(input: string, replacedHashes = new Array<string>()) {
   let result = input;
 
-  const openingTags = input.match(/<BPGT.*?EPGT>/) ?? [];
-  const fullClosingTags = input.match(/<\/BPGT.*?EPGT>/) ?? [];
-  const openClosingTag = (input.match(/<\/BPGT.*?EPGT(?!>)/) ?? [])[0];
+  const fullOpeningTags = input.match(/<BPGT.*?EPGT>/g) ?? [];
+  const openOpeningTag = (input.match(/<BPGT.*?EPGT(?!>)/g) ?? [])[0];
+  const fullClosingTags = input.match(/<\/BPGT.*?EPGT>/g) ?? [];
+  const openClosingTag = (input.match(/<\/BPGT.*?EPGT(?!>)/g) ?? [])[0];
 
-  openingTags.forEach((openingTag) => {
+  if (lastMissedBracket && input.match(/[\t ]*>/)) {
+    lastMissedBracket = false;
+    result = result.replace(/[\t ]*>/, "");
+  }
+
+  fullOpeningTags.forEach((openingTag) => {
     replacedHashes.push(openingTag);
     result = result.replace(openingTag, replacements.get(openingTag)!);
   });
+
+  if (openOpeningTag) {
+    const fixedOpeningTag = openOpeningTag + ">";
+    lastMissedBracket = true;
+
+    replacedHashes.push(fixedOpeningTag);
+    result = result.replace(openOpeningTag, replacements.get(fixedOpeningTag)!);
+  }
 
   fullClosingTags.forEach((fullClosingTag) => {
     replacedHashes.push(fullClosingTag);
@@ -151,15 +165,10 @@ function replaceBlocks(input: string, replacedHashes = new Array<string>()) {
 
   if (openClosingTag) {
     const fixedClosingTag = openClosingTag + ">";
-    lastWasOpenClosingTag = true;
+    lastMissedBracket = true;
 
     replacedHashes.push(fixedClosingTag);
-    result = input.replace(openClosingTag, replacements.get(fixedClosingTag)!);
-  }
-
-  if (lastWasOpenClosingTag && input.match(/[\t ]*>/)) {
-    lastWasOpenClosingTag = false;
-    result = input.replace(/[\t ]*>/, "");
+    result = result.replace(openClosingTag, replacements.get(fixedClosingTag)!);
   }
 
   return result;

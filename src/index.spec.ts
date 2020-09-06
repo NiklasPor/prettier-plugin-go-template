@@ -260,6 +260,63 @@ This is an article. Name: {{ .article.name }}
 {{ end }}
 `,
   },
+  {
+    name: "If Chain",
+    code: `{{ if eq . "test1" }}
+    1
+    {{ else if eq . "test2" }}
+    2
+    {{ else if eq . "test3" }}
+    3
+    {{ else if eq . "test4" }}
+    4
+    {{ else if eq . "test5" }}
+    5
+    {{ else if eq . "test6" }}
+    6
+    {{ else if eq . "test7" }}
+    7
+    {{ else }}
+     {{ . }}
+    {{ end }}`,
+    expectedCode: `{{ if eq . "test1" }}
+  1
+  {{ else if eq . "test2" }}
+  2
+  {{ else if eq . "test3" }}
+  3
+  {{ else if eq . "test4" }}
+  4
+  {{ else if eq . "test5" }}
+  5
+  {{ else if eq . "test6" }}
+  6
+  {{ else if eq . "test7" }}
+  7
+  {{ else }}
+  {{ . }}
+{{ end }}
+`,
+  },
+  {
+    name: "If With Variables",
+    code: `{{ $color := "blue" }}
+{{ if .type }}
+      {{if eq .type "attention"}}{{ $color = "yellow" }}{{end}}
+  {{if eq .type "error"}}{{ $color = "red" }}{{end}}
+  {{if eq .type "success"}}{{ $color = "green" }}{{end}}
+      {{if eq .type "info"}}{{ $color = "blue" }}{{end}}
+{{end}}
+`,
+    expectedCode: `{{ $color := "blue" }}
+{{ if .type }}
+  {{ if eq .type "attention" }}{{ $color = "yellow" }}{{ end }}
+  {{ if eq .type "error" }}{{ $color = "red" }}{{ end }}
+  {{ if eq .type "success" }}{{ $color = "green" }}{{ end }}
+  {{ if eq .type "info" }}{{ $color = "blue" }}{{ end }}
+{{ end }}
+`,
+  },
 ];
 
 tests.forEach((test) =>
