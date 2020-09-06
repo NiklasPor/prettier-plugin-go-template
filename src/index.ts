@@ -1,20 +1,24 @@
 import { doc, Parser, Printer, SupportLanguage } from "prettier";
 import { parsers as htmlParsers } from "prettier/parser-html";
+import * as uuid from "uuid";
 
-function stringHashcode(input: string): number {
-  var hash = 0,
-    i,
-    chr;
-  for (i = 0; i < input.length; i++) {
-    chr = input.charCodeAt(i);
-    hash = (hash << 5) - hash + chr;
-    hash |= 0;
-  }
-  return hash;
-}
+const blockHashes = new Array<string>();
 
 const htmlParser = htmlParsers.html;
-const buildReplacement = (input: string) => `BPGT${stringHashcode(input)}EPGT`;
+const buildReplacement = (input: string) => {
+  const id = uuid.v4().replace(/-/g, "");
+
+  if (input.match(/{{[-<]? (?:if|range|block|with|define)/)) {
+    blockHashes.push(id);
+    return `<BPGT${id}EPGT>`;
+  }
+
+  if (input.match(/{{[-<]? end/)) {
+    return `</BPGT${blockHashes.pop()}EPGT>`;
+  }
+
+  return `BPGT${id}EPGT`;
+};
 
 const replacements = new Map<string, string>();
 
@@ -35,9 +39,6 @@ export const parsers = {
           continue;
         }
 
-        const replacement = buildReplacement(result);
-        replacedText = replacedText.replace(result, replacement);
-
         const cleanedResult = result
           // clean except for hyphens and shortcodes
           .replace(/{{(?![-<])[ \t]*/g, "{{ ")
@@ -52,6 +53,9 @@ export const parsers = {
           .replace(/[ \t]*>}}/g, " >}}")
 
           .replace(/ *\n/g, "\n");
+
+        const replacement = buildReplacement(cleanedResult);
+        replacedText = replacedText.replace(result, replacement);
 
         replacements.set(replacement, cleanedResult);
       }
@@ -79,6 +83,60 @@ export const languages: SupportLanguage[] = [
   },
 ];
 
+function replaceSingles(input: string, replacedHashes = new Array<string>()) {
+  const regexp = /BPGT.*?EPGT/g;
+
+  let result = input;
+  let match: RegExpExecArray | null;
+
+  // tslint:disable-next-line: no-conditional-assignment
+  while ((match = regexp.exec(input)) != null) {
+    const hash = match[0];
+
+    const replacement = replacements.get(hash);
+
+    if (replacement) {
+      result = result.replace(hash, replacement);
+      replacedHashes.push(hash);
+    }
+  }
+
+  return result;
+}
+
+let lastWasOpenClosingTag = false;
+
+function replaceBlocks(input: string, replacedHashes = new Array<string>()) {
+  const openingTag = (input.match(/<BPGT.*EPGT>/) ?? [])[0];
+  const fullClosingTag = (input.match(/<\/BPGT.*EPGT>/) ?? [])[0];
+  const openClosingTag = (input.match(/<\/BPGT.*EPGT/) ?? [])[0];
+
+  if (openingTag) {
+    replacedHashes.push(openingTag);
+    return input.replace(openingTag, replacements.get(openingTag)!);
+  }
+
+  if (fullClosingTag) {
+    replacedHashes.push(fullClosingTag);
+    return input.replace(fullClosingTag, replacements.get(fullClosingTag)!);
+  }
+
+  if (openClosingTag) {
+    const fixedClosingTag = openClosingTag + ">";
+    lastWasOpenClosingTag = true;
+
+    replacedHashes.push(fixedClosingTag);
+    return input.replace(openClosingTag, replacements.get(fixedClosingTag)!);
+  }
+
+  if (lastWasOpenClosingTag && input.trim() === ">") {
+    lastWasOpenClosingTag = false;
+    return "";
+  }
+
+  return input;
+}
+
 export const printers = {
   "go-template": <Printer>{
     embed: (_, __, textToDoc, options) => {
@@ -93,22 +151,11 @@ export const printers = {
           return docLeaf;
         }
 
-        const regexp = /BPGT.*?EPGT/g;
-
         let result = docLeaf;
-        let match: RegExpExecArray | null;
 
-        // tslint:disable-next-line: no-conditional-assignment
-        while ((match = regexp.exec(docLeaf)) != null) {
-          const hash = match[0];
+        result = replaceSingles(result, replacedHashes);
 
-          const replacement = replacements.get(hash);
-
-          if (replacement) {
-            result = result.replace(hash, replacement);
-            replacedHashes.push(hash);
-          }
-        }
+        result = replaceBlocks(result, replacedHashes);
 
         return result;
       });

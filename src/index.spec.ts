@@ -218,7 +218,7 @@ This is an article. Name: {{ .article.name }}
 `,
     expectedCode: `{{< youtube 09jf3ow9jfw >}}
 {{< img src="/media/spf13.jpg" title="Blah" >}}
-`
+`,
   },
   {
     name: "Empty Bracket Spacing doesn't Break",
@@ -226,6 +226,16 @@ This is an article. Name: {{ .article.name }}
 {{      }}`,
     expectedCode: `{{ }}
 {{ }}
+`,
+  },
+  {
+    name: "Blocks",
+    code: `{{-  define "some"-}}
+    {{   . }}
+{{-end-}} `,
+    expectedCode: `{{- define "some" -}}
+ {{ . }}
+{{- end -}}
 `,
   },
 ];
