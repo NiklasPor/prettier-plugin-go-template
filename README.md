@@ -40,6 +40,10 @@ Install both globally (`npm i -g`) or locally – otherwise prettier may not pic
 
 ## Changelog
 
+### v0.0.10
+
+- Resolve bug #19: Fix template comments.
+
 ### v0.0.9
 
 - Resolve bug of single line if statements.
