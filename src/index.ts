@@ -46,9 +46,9 @@ export const parsers = {
         }
 
         const cleanedResult = result
-          // clean except for hyphens and shortcodes
-          .replace(/{{(?![-<])[ \t]*/g, "{{ ")
-          .replace(/[ \t]*(?<![->])}}/g, " }}")
+          // clean except for hyphens, shortcodes, comments
+          .replace(/{{(?![-<]|(?:\/\*))[ \t]*/g, "{{ ")
+          .replace(/[ \t]*(?<![->]|(?:\*\/))}}/g, " }}")
 
           // clean hyphens
           .replace(/{{-[ \t]*/g, "{{- ")

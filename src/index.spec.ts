@@ -317,6 +317,12 @@ This is an article. Name: {{ .article.name }}
 {{ end }}
 `,
   },
+  {
+    name: "Single Line Comment",
+    code: `{{/* comment */}}`,
+    expectedCode: `{{/* comment */}}
+`,
+  },
 ];
 
 tests.forEach((test) =>
