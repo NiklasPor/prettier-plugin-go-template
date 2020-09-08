@@ -33,6 +33,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "richtera",
+      "name": "Andreas Richter",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/708186?v=4",
+      "profile": "http://richtera.org",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "badgeTemplate": "",
