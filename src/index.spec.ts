@@ -323,6 +323,17 @@ This is an article. Name: {{ .article.name }}
     expectedCode: `{{/* comment */}}
 `,
   },
+  {
+    name: "Unexpected Closing Tag",
+    code: `<header id="site-head" {{ with .Params.header_image }} style="background-image: url({{ . }})" {{ end }}></header>`,
+    expectedCode: `<header
+  id="site-head"
+  {{ with .Params.header_image }}
+  style="background-image: url({{ . }})"
+  {{ end }}
+></header>
+`,
+  },
 ];
 
 tests.forEach((test) =>

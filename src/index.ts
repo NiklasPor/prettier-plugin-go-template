@@ -10,15 +10,15 @@ const getId = () => {
   return _id.toString();
 };
 
-const buildReplacement = (input: string) => {
+const buildReplacement = (input: string, allTagsClosed: boolean) => {
   const id = getId();
 
-  if (input.match(/{{[-<]? (?:if|range|block|with|define)/)) {
+  if (allTagsClosed && input.match(/{{[-<]? (?:if|range|block|with|define)/)) {
     blockHashes.push(id);
     return `<BPGT${id}EPGT>`;
   }
 
-  if (input.match(/{{[-<]? end/)) {
+  if (allTagsClosed && input.match(/{{[-<]? end/)) {
     return `</BPGT${blockHashes.pop()}EPGT>`;
   }
 
@@ -61,7 +61,16 @@ export const parsers = {
           .replace(/ *\n/g, "\n")
           .trim();
 
-        const replacement = buildReplacement(cleanedResult);
+        const resultIndex = replacedText.indexOf(result);
+        const prefixString = replacedText.substring(0, resultIndex);
+
+        const openingTags = prefixString.match(/<[\w/]/)?.length;
+        const closingTags = prefixString.match(/[\w/]>/)?.length;
+
+        const replacement = buildReplacement(
+          cleanedResult,
+          openingTags === closingTags
+        );
 
         replacedText = replacedText.replace(result, replacement);
 
