@@ -323,6 +323,18 @@ This is an article. Name: {{ .article.name }}
     expectedCode: `{{/* comment */}}
 `,
   },
+  {
+    name: "Script Tag",
+    code: `
+<script type="text/javascript">
+  {{ $data.script | safeJS }}
+</script>
+    `,
+    expectedCode: `<script type="text/javascript">
+  {{ $data.script | safeJS }}
+</script>
+`,
+  },
 ];
 
 tests.forEach((test) =>
