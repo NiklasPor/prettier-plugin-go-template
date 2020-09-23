@@ -335,6 +335,32 @@ This is an article. Name: {{ .article.name }}
 </script>
 `,
   },
+  {
+    name: "Don't change if inside tag",
+    code: `<div {{ if true }}style="color: green;"{{ end }}>test</div>`,
+    expectedCode: `<div {{ if true }}style="color: green;" {{ end }}>test</div>
+`,
+  },
+  {
+    name: "Don't change if inside tag with multiple attributes",
+    code: `<div {{ if true }}name="test" style="color: green;"{{ end }}>test</div>`,
+    expectedCode: `<div {{ if true }}name="test" style="color: green;" {{ end }}>test</div>
+`,
+  },
+  {
+    name: "If inside tag with multiple attributes longer than 80",
+    code: `<div {{ if true }}name="test" style="color: green;" name="test" data-information="test"{{ end }}>test</div>`,
+    expectedCode: `<div
+  {{ if true }}name="test"
+  style="color: green;"
+  name="test"
+  data-information="test"
+  {{ end }}
+>
+  test
+</div>
+`,
+  },
 ];
 
 tests.forEach((test) =>
