@@ -6,7 +6,7 @@ const htmlParser = htmlParsers.html;
 
 let _id = 0;
 const getId = () => {
-  _id = _id + (1 % Number.MAX_SAFE_INTEGER);
+  _id = (_id + 1) % Number.MAX_SAFE_INTEGER;
   return _id.toString();
 };
 
