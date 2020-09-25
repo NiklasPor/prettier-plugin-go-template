@@ -4,7 +4,7 @@
 
 Fixes formatting for go template files. The only peer dependency is [prettier](https://www.npmjs.com/package/prettier).
 
-```
+```bash
 npm install --save-dev prettier-plugin-go-template
 ```
 
@@ -15,7 +15,7 @@ The following file types are detected automatically:
 
 To use it with GoHugo and basic `.html` files, you'll have to override the used parser inside your `.prettierrc` file:
 
-```
+```json
 {
   "overrides": [
     {
