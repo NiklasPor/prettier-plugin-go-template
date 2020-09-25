@@ -1,4 +1,5 @@
 import { doc, Parser, Printer, SupportLanguage } from "prettier";
+// tslint:disable-next-line: no-submodule-imports
 import { parsers as htmlParsers } from "prettier/parser-html";
 
 const blockHashes = new Array<string>();
@@ -32,7 +33,6 @@ export const parsers = {
     ...htmlParser,
     astFormat: "go-template",
     preprocess: (text) => {
-      //
       const regexp = /(?:{{.*?}})|(?:<script(?:\n|.)*?>)((?:\n|.)*?)(?:<\/script>)/gm;
 
       let replacedText = text.trim();

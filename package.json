@@ -24,6 +24,7 @@
   "main": "lib/index",
   "types": "lib/index",
   "scripts": {
+    "lint": "tslint --project .",
     "test": "jest",
     "coverage": "jest --coverage",
     "publish:coverage": "codecov -t $npm_config_prettier_plugin_go_html_codecov",
