@@ -42,6 +42,16 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "noahbrenner",
+      "name": "Noah Brenner",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/24858379?v=4",
+      "profile": "https://noahbrenner.github.io/",
+      "contributions": [
+        "code",
+        "doc"
+      ]
     }
   ],
   "badgeTemplate": "",
