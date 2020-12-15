@@ -52,6 +52,15 @@
         "code",
         "doc"
       ]
+    },
+    {
+      "login": "silverwind",
+      "name": "silverwind",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/115237?v=4",
+      "profile": "https://silverwind.io",
+      "contributions": [
+        "ideas"
+      ]
     }
   ],
   "badgeTemplate": "",
