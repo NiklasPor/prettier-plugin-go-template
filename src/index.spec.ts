@@ -344,3 +344,21 @@ tests.forEach((test) =>
     expect(formatted).toEqual(test.expectedCode);
   })
 );
+
+it("should be able to continue formatting after error & log warning", () => {
+  global.console.error = jest.fn();
+
+  const invalidCode = `{{ if }}`;
+  const validCode = `<div>
+                          <span> Test </span>
+</div>`;
+  const validCodeFormatted = `<div>
+  <span> Test </span>
+</div>
+`;
+
+  expect(prettify(invalidCode)).toBe(invalidCode);
+
+  expect(prettify(validCode)).toBe(validCodeFormatted);
+  expect(global.console.error).toBeCalledTimes(1);
+});

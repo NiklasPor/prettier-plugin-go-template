@@ -1,8 +1,14 @@
-import { doc, Parser, Printer, SupportLanguage } from "prettier";
+import {
+  doc,
+  Parser,
+  Printer,
+  SupportLanguage,
+  ParserOptions,
+  Options,
+} from "prettier";
 // tslint:disable-next-line: no-submodule-imports
 import { parsers as htmlParsers } from "prettier/parser-html";
 
-const blockHashes = new Array<string>();
 const htmlParser = htmlParsers.html;
 
 let _id = 0;
@@ -11,7 +17,7 @@ const getId = () => {
   return _id.toString();
 };
 
-const buildReplacement = (input: string) => {
+const buildReplacement = (input: string, blockHashes: string[]) => {
   const id = getId();
 
   if (input.match(/{{[-<]? (?:if|range|block|with|define)/)) {
@@ -26,68 +32,10 @@ const buildReplacement = (input: string) => {
   return `BPGT${id}EPGT`;
 };
 
-const replacements = new Map<string, string>();
-
 export const parsers = {
   "go-template": <Parser>{
     ...htmlParser,
     astFormat: "go-template",
-    preprocess: (text) => {
-      const regexp = /(?:{{.*?}})|(?:<script(?:\n|.)*?>)((?:\n|.)*?)(?:<\/script>)/gm;
-
-      let replacedText = text.trim();
-      let match: RegExpExecArray | null;
-      // tslint:disable-next-line: no-conditional-assignment
-      while ((match = regexp.exec(text)) != null) {
-        const result = match[0];
-
-        if (!result.includes("{{")) {
-          continue;
-        }
-
-        const cleanedResult = result
-          // clean except for hyphens, shortcodes, comments
-          .replace(/{{(?![-<]|(?:\/\*))[ \t]*/g, "{{ ")
-          .replace(/[ \t]*(?<![->]|(?:\*\/))}}/g, " }}")
-
-          // clean hyphens
-          .replace(/{{-[ \t]*/g, "{{- ")
-          .replace(/[ \t]*-}}/g, " -}}")
-
-          // clean shortcodes, e.g. "{{<    year    >}}" -> "{{< year >}}"
-          .replace(/{{<[ \t]*/g, "{{< ")
-          .replace(/[ \t]*>}}/g, " >}}")
-
-          .replace(/ *\n/g, "\n")
-          .trim();
-
-        const replacement = buildReplacement(cleanedResult);
-
-        replacedText = replacedText.replace(result, replacement);
-
-        const forceLinebreak = !!replacedText.match(
-          new RegExp(`^[ \t]*${replacement}[ \t]*$`, "gm")
-        );
-
-        if (forceLinebreak && !replacement.includes("<")) {
-          const linebreakReplacement = `<!--BPGT${replacement}EPGT-->`;
-
-          replacedText = replacedText.replace(
-            replacement,
-            linebreakReplacement
-          );
-          replacements.set(linebreakReplacement, cleanedResult);
-        } else {
-          replacements.set(replacement, cleanedResult);
-        }
-      }
-
-      if (blockHashes.length > 0) {
-        throw Error("Missing ending block.");
-      }
-
-      return replacedText;
-    },
   },
 };
 
@@ -109,7 +57,11 @@ export const languages: SupportLanguage[] = [
   },
 ];
 
-function replaceSingles(input: string, replacedHashes = new Array<string>()) {
+function replaceSingles(
+  input: string,
+  replacements: Map<string, string>,
+  replacedHashes = new Array<string>()
+) {
   const regexp = /(?:<!--BPGT)?BPGT.*?EPGT(?:EPGT-->)?/g;
 
   let result = input;
@@ -132,7 +84,11 @@ function replaceSingles(input: string, replacedHashes = new Array<string>()) {
 
 let lastMissedBracket = false;
 
-function replaceBlocks(input: string, replacedHashes = new Array<string>()) {
+function replaceBlocks(
+  input: string,
+  replacements: Map<string, string>,
+  replacedHashes = new Array<string>()
+) {
   let result = input;
 
   const fullOpeningTags = input.match(/<BPGT.*?EPGT>/g) ?? [];
@@ -174,32 +130,97 @@ function replaceBlocks(input: string, replacedHashes = new Array<string>()) {
   return result;
 }
 
+function embedFn(
+  textToDoc: (text: string, options: Options) => doc.builders.Doc,
+  options: ParserOptions
+): doc.builders.Doc {
+  const text = options.originalText;
+
+  const regexp = /(?:{{.*?}})|(?:<script(?:\n|.)*?>)((?:\n|.)*?)(?:<\/script>)/gm;
+  const replacements = new Map<string, string>();
+  const blockHashes = new Array<string>();
+
+  let replacedText = text.trim();
+  let match: RegExpExecArray | null;
+  // tslint:disable-next-line: no-conditional-assignment
+  while ((match = regexp.exec(text)) != null) {
+    const result = match[0];
+
+    if (!result.includes("{{")) {
+      continue;
+    }
+
+    const cleanedResult = result
+      // clean except for hyphens, shortcodes, comments
+      .replace(/{{(?![-<]|(?:\/\*))[ \t]*/g, "{{ ")
+      .replace(/[ \t]*(?<![->]|(?:\*\/))}}/g, " }}")
+
+      // clean hyphens
+      .replace(/{{-[ \t]*/g, "{{- ")
+      .replace(/[ \t]*-}}/g, " -}}")
+
+      // clean shortcodes, e.g. "{{<    year    >}}" -> "{{< year >}}"
+      .replace(/{{<[ \t]*/g, "{{< ")
+      .replace(/[ \t]*>}}/g, " >}}")
+
+      .replace(/ *\n/g, "\n")
+      .trim();
+
+    const replacement = buildReplacement(cleanedResult, blockHashes);
+
+    replacedText = replacedText.replace(result, replacement);
+
+    const forceLinebreak = !!replacedText.match(
+      new RegExp(`^[ \t]*${replacement}[ \t]*$`, "gm")
+    );
+
+    if (forceLinebreak && !replacement.includes("<")) {
+      const linebreakReplacement = `<!--BPGT${replacement}EPGT-->`;
+
+      replacedText = replacedText.replace(replacement, linebreakReplacement);
+      replacements.set(linebreakReplacement, cleanedResult);
+    } else {
+      replacements.set(replacement, cleanedResult);
+    }
+  }
+
+  if (blockHashes.length > 0) {
+    throw Error("Missing ending block.");
+  }
+
+  const htmlDoc = textToDoc(replacedText, {
+    parser: "html",
+  });
+
+  const replacedHashes: string[] = [];
+
+  const mappedDoc = doc.utils.mapDoc(htmlDoc, (docLeaf) => {
+    if (typeof docLeaf !== "string") {
+      return docLeaf;
+    }
+
+    let result = docLeaf;
+
+    result = replaceSingles(result, replacements, replacedHashes);
+
+    result = replaceBlocks(result, replacements, replacedHashes);
+
+    return result;
+  });
+
+  return mappedDoc;
+}
+
 export const printers = {
   "go-template": <Printer>{
     embed: (_, __, textToDoc, options) => {
-      const htmlDoc = textToDoc(options.originalText, {
-        parser: "html",
-      });
-
-      const replacedHashes: string[] = [];
-
-      const mappedDoc = doc.utils.mapDoc(htmlDoc, (docLeaf) => {
-        if (typeof docLeaf !== "string") {
-          return docLeaf;
-        }
-
-        let result = docLeaf;
-
-        result = replaceSingles(result, replacedHashes);
-
-        result = replaceBlocks(result, replacedHashes);
-
-        return result;
-      });
-
-      replacedHashes.forEach((hash) => replacements.delete(hash));
-
-      return mappedDoc;
+      try {
+        return embedFn(textToDoc, options);
+      } catch (e) {
+        // tslint:disable-next-line:no-console
+        console.error(e);
+        return options.originalText;
+      }
     },
   },
 };
