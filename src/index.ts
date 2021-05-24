@@ -1,23 +1,15 @@
+import { doc, FastPath, Parser, Printer, SupportLanguage } from "prettier";
+import { builders } from "prettier/doc";
+import { parsers as htmlParsers } from "prettier/parser-html";
 import {
   GoDoubleBlock,
   GoInline,
-  GoInlineDelimiter,
-  GoRoot,
+  GoInlineEndDelimiter,
+  GoInlineStartDelimiter,
+  GoNode,
   idDoubleBlock,
+  parseGoTemplate,
 } from "./parse";
-import { GoBlock } from "./parse";
-import {
-  doc,
-  Doc,
-  FastPath,
-  Parser,
-  Plugin,
-  Printer,
-  SupportLanguage,
-} from "prettier";
-import { parsers as htmlParsers } from "prettier/parser-html";
-import { GoNode, parseGoTemplate } from "./parse";
-import { builders } from "prettier/doc";
 
 const htmlParser = htmlParsers.html;
 const PLUGIN_KEY = "go-template";
@@ -166,37 +158,28 @@ function printInline(
   path: FastPath<GoNode>,
   print: PrintFn
 ): builders.Doc {
-  return printStatement(node.statement, node.delimiter);
+  return printStatement(node.statement, {
+    start: node.startDelimiter,
+    end: node.endDelimiter,
+  });
 }
 
-function printStatement(statement: string, delimiter?: GoInlineDelimiter) {
-  const delimiters = getDelimiters(delimiter ?? "none");
+function printStatement(
+  statement: string,
+  delimiter: { start: GoInlineStartDelimiter; end: GoInlineEndDelimiter } = {
+    start: "",
+    end: "",
+  }
+) {
   return builders.group(
     builders.concat([
       "{{",
-      delimiters.start,
+      delimiter.start,
       " ",
       statement.trim(),
       " ",
-      delimiters.end,
+      delimiter.end,
       "}}",
     ])
   );
-}
-
-function getDelimiters(delimiter: GoInlineDelimiter) {
-  return {
-    ["angle-bracket"]: {
-      start: "<",
-      end: ">",
-    },
-    ["percent"]: {
-      start: "%",
-      end: "%",
-    },
-    ["none"]: {
-      start: "",
-      end: "",
-    },
-  }[delimiter];
 }

@@ -9,7 +9,7 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
   options
 ) => {
   const regex =
-    /{{(?<delimiter><|%)?\s*(?<statement>(?<keyword>if|range|block|with|define|end|else)?.*?)\s*[>%]?}}/g;
+    /{{(?<startdelimiter>-|<|%|\/\*)?\s*(?<statement>(?<keyword>if|range|block|with|define|end|else)?.*?)\s*(?<endDelimiter>-|>|%|\*\/)?}}/g;
   const blocks: {
     start: RegExpMatchArray;
     end: RegExpMatchArray;
@@ -31,6 +31,10 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
     const current = last(nodeStack);
     const keyword = match.groups?.keyword;
     const statement = match.groups?.statement;
+    const startDelimiter = (match.groups?.startdelimiter ??
+      "") as GoInlineStartDelimiter;
+    const endDelimiter = (match.groups?.endDelimiter ??
+      "") as GoInlineEndDelimiter;
 
     if (current === undefined) {
       throw Error("Node stack empty.");
@@ -132,7 +136,8 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
       const inline: GoInline = {
         index: match.index,
         length: match[0].length,
-        delimiter: getDelimiter(match.groups?.delimiter),
+        startDelimiter,
+        endDelimiter,
         parent: current!,
         type: "inline",
         statement,
@@ -172,17 +177,6 @@ function last<T>(array: T[]): T | undefined {
   return array[array.length - 1];
 }
 
-function getDelimiter(character: string | undefined): GoInlineDelimiter {
-  switch (character) {
-    case "<":
-      return "angle-bracket";
-    case "%":
-      return "percent";
-    default:
-      return "none";
-  }
-}
-
 export type GoNode = GoRoot | GoBlock | GoInline | GoDoubleBlock;
 
 export type GoBlockKeyword =
@@ -192,7 +186,6 @@ export type GoBlockKeyword =
   | "with"
   | "define"
   | "else";
-export type GoInlineDelimiter = "percent" | "angle-bracket" | "none";
 
 export type GoRoot = { type: "root" } & Omit<
   GoBlock,
@@ -225,9 +218,14 @@ export interface GoDoubleBlock extends GoBaseNode {
   keyword: GoBlockKeyword;
 }
 
+export type GoSharedDelimiter = "%" | "-" | "";
+export type GoInlineStartDelimiter = "<" | "/*" | GoSharedDelimiter;
+export type GoInlineEndDelimiter = ">" | "*/" | GoSharedDelimiter;
+
 export interface GoInline extends GoBaseNode {
   type: "inline";
-  delimiter: GoInlineDelimiter;
+  startDelimiter: GoInlineStartDelimiter;
+  endDelimiter: GoInlineEndDelimiter;
 }
 
 export function isInline(node: GoNode): node is GoInline {
