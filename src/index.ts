@@ -1,226 +1,157 @@
 import {
-  doc,
-  Parser,
-  Printer,
-  SupportLanguage,
-  ParserOptions,
-  Options,
-} from "prettier";
-// tslint:disable-next-line: no-submodule-imports
+  GoDoubleBlock,
+  GoInline,
+  GoInlineDelimiter,
+  GoRoot,
+  idDoubleBlock,
+} from "./parse";
+import { GoBlock } from "./parse";
+import { doc, Doc, FastPath, Parser, Plugin, Printer } from "prettier";
 import { parsers as htmlParsers } from "prettier/parser-html";
+import { GoNode, parseGoTemplate } from "./parse";
+import { builders } from "prettier/doc";
 
 const htmlParser = htmlParsers.html;
+const PLUGIN_KEY = "go-template";
 
-let _id = 0;
-const getId = () => {
-  _id = (_id + 1) % Number.MAX_SAFE_INTEGER;
-  return _id.toString();
-};
-
-const buildReplacement = (input: string, blockHashes: string[]) => {
-  const id = getId();
-
-  if (input.match(/{{[-<]? (?:if|range|block|with|define)/)) {
-    blockHashes.push(id);
-    return `<BPGT${id}EPGT>`;
-  }
-
-  if (input.match(/{{[-<]? end/)) {
-    return `</BPGT${blockHashes.pop()}EPGT>`;
-  }
-
-  return `BPGT${id}EPGT`;
-};
-
-export const parsers = {
-  "go-template": <Parser>{
-    ...htmlParser,
-    astFormat: "go-template",
+export const GoTemplatePlugin: Plugin = {
+  parsers: {
+    [PLUGIN_KEY]: <Parser<GoNode>>{
+      ...htmlParser,
+      astFormat: PLUGIN_KEY,
+      preprocess: (text) => text,
+      parse: parseGoTemplate,
+    },
   },
-};
+  printers: {
+    [PLUGIN_KEY]: <Printer<GoNode>>{
+      print: (path, options, print) => {
+        const node = path.getNode();
 
-export const languages: SupportLanguage[] = [
-  {
-    name: "GoTemplate",
-    parsers: ["go-template"],
-    extensions: [
-      ".go.html",
-      ".gohtml",
-      ".gotmpl",
-      ".go.tmpl",
-      ".tmpl",
-      ".tpl",
-      ".html.tmpl",
-      ".html.tpl",
-    ],
-    vscodeLanguageIds: ["gotemplate", "gohtml", "GoTemplate", "GoHTML"],
-  },
-];
+        switch (node?.type) {
+          case "inline":
+            return printInline(node, path, print);
+          case "double-block":
+            return printDoubleBlock(node, path, print);
+        }
 
-function replaceSingles(
-  input: string,
-  replacements: Map<string, string>,
-  replacedHashes = new Array<string>()
-) {
-  const regexp = /(?:<!--BPGT)?BPGT.*?EPGT(?:EPGT-->)?/g;
+        return "welp";
+      },
+      embed: (path, print, textToDoc, options) => {
+        const node = path.getNode();
 
-  let result = input;
-  let match: RegExpExecArray | null;
+        if (!(node?.type === "block" || node?.type === "root")) {
+          return;
+        }
 
-  // tslint:disable-next-line: no-conditional-assignment
-  while ((match = regexp.exec(input)) != null) {
-    const hash = match[0];
+        const html = textToDoc(node.aliasedContent, {
+          ...options,
+          parser: "html",
+          parentParser: "go-template",
+        });
 
-    const replacement = replacements.get(hash);
+        const mapped = doc.utils.mapDoc(html, (currentDoc) => {
+          if (typeof currentDoc !== "string") {
+            return currentDoc;
+          }
 
-    if (replacement) {
-      result = result.replace(hash, replacement);
-      replacedHashes.push(hash);
-    }
-  }
+          let result: builders.Doc = currentDoc;
 
-  return result;
-}
+          Object.keys(node.children).forEach(
+            (key) =>
+              (result = doc.utils.mapDoc(result, (docNode) =>
+                typeof docNode !== "string" || !docNode.includes(key)
+                  ? docNode
+                  : builders.concat([
+                      docNode.substring(0, docNode.indexOf(key)),
+                      path.call(print, "children", key),
+                      docNode.substring(docNode.indexOf(key) + key.length),
+                    ])
+              ))
+          );
 
-let lastMissedBracket = false;
+          return result;
+        });
 
-function replaceBlocks(
-  input: string,
-  replacements: Map<string, string>,
-  replacedHashes = new Array<string>()
-) {
-  let result = input;
+        if (node.type === "root") {
+          return mapped;
+        }
 
-  const fullOpeningTags = input.match(/<BPGT.*?EPGT>/g) ?? [];
-  const openOpeningTag = (input.match(/<BPGT.*?EPGT(?!>)/g) ?? [])[0];
-  const fullClosingTags = input.match(/<\/BPGT.*?EPGT>/g) ?? [];
-  const openClosingTag = (input.match(/<\/BPGT.*?EPGT(?!>)/g) ?? [])[0];
+        if (Array.isArray(mapped)) {
+          mapped.pop();
+        }
 
-  if (lastMissedBracket && input.match(/[\t ]*>/)) {
-    lastMissedBracket = false;
-    result = result.replace(/[\t ]*>/, "");
-  }
+        const endStatement =
+          idDoubleBlock(node.parent) && node.parent.firstChild === node
+            ? ""
+            : printStatement("end");
 
-  fullOpeningTags.forEach((openingTag) => {
-    replacedHashes.push(openingTag);
-    result = result.replace(openingTag, replacements.get(openingTag)!);
-  });
+        const result = builders.concat([
+          printStatement(node.statement),
+          builders.group(
+            builders.indent(builders.concat([builders.hardline, mapped]))
+          ),
+          builders.hardline,
+          endStatement,
+        ]);
 
-  if (openOpeningTag) {
-    const fixedOpeningTag = openOpeningTag + ">";
-    lastMissedBracket = true;
-
-    replacedHashes.push(fixedOpeningTag);
-    result = result.replace(openOpeningTag, replacements.get(fixedOpeningTag)!);
-  }
-
-  fullClosingTags.forEach((fullClosingTag) => {
-    replacedHashes.push(fullClosingTag);
-    result = result.replace(fullClosingTag, replacements.get(fullClosingTag)!);
-  });
-
-  if (openClosingTag) {
-    const fixedClosingTag = openClosingTag + ">";
-    lastMissedBracket = true;
-
-    replacedHashes.push(fixedClosingTag);
-    result = result.replace(openClosingTag, replacements.get(fixedClosingTag)!);
-  }
-
-  return result;
-}
-
-function embedFn(
-  textToDoc: (text: string, options: Options) => doc.builders.Doc,
-  options: ParserOptions
-): doc.builders.Doc {
-  const text = options.originalText;
-
-  const regexp = /(?:{{.*?}})|(?:<script(?:\n|.)*?>)((?:\n|.)*?)(?:<\/script>)/gm;
-  const replacements = new Map<string, string>();
-  const blockHashes = new Array<string>();
-
-  let replacedText = text.trim();
-  let match: RegExpExecArray | null;
-  // tslint:disable-next-line: no-conditional-assignment
-  while ((match = regexp.exec(text)) != null) {
-    const result = match[0];
-
-    if (!result.includes("{{")) {
-      continue;
-    }
-
-    const cleanedResult = result
-      // clean except for hyphens, shortcodes, comments
-      .replace(/{{(?![-<]|(?:\/\*))[ \t]*/g, "{{ ")
-      .replace(/[ \t]*(?<![->]|(?:\*\/))}}/g, " }}")
-
-      // clean hyphens
-      .replace(/{{-[ \t]*/g, "{{- ")
-      .replace(/[ \t]*-}}/g, " -}}")
-
-      // clean shortcodes, e.g. "{{<    year    >}}" -> "{{< year >}}"
-      .replace(/{{<[ \t]*/g, "{{< ")
-      .replace(/[ \t]*>}}/g, " >}}")
-
-      .replace(/ *\n/g, "\n")
-      .trim();
-
-    const replacement = buildReplacement(cleanedResult, blockHashes);
-
-    replacedText = replacedText.replace(result, replacement);
-
-    const forceLinebreak = !!replacedText.match(
-      new RegExp(`^[ \t]*${replacement}[ \t]*$`, "gm")
-    );
-
-    if (forceLinebreak && !replacement.includes("<")) {
-      const linebreakReplacement = `<!--BPGT${replacement}EPGT-->`;
-
-      replacedText = replacedText.replace(replacement, linebreakReplacement);
-      replacements.set(linebreakReplacement, cleanedResult);
-    } else {
-      replacements.set(replacement, cleanedResult);
-    }
-  }
-
-  if (blockHashes.length > 0) {
-    throw Error("Missing ending block.");
-  }
-
-  const htmlDoc = textToDoc(replacedText, {
-    parser: "html",
-  });
-
-  const replacedHashes: string[] = [];
-
-  const mappedDoc = doc.utils.mapDoc(htmlDoc, (docLeaf) => {
-    if (typeof docLeaf !== "string") {
-      return docLeaf;
-    }
-
-    let result = docLeaf;
-
-    result = replaceSingles(result, replacements, replacedHashes);
-
-    result = replaceBlocks(result, replacements, replacedHashes);
-
-    return result;
-  });
-
-  return mappedDoc;
-}
-
-export const printers = {
-  "go-template": <Printer>{
-    embed: (_, __, textToDoc, options) => {
-      try {
-        return embedFn(textToDoc, options);
-      } catch (e) {
-        // tslint:disable-next-line:no-console
-        console.error(e);
-        return options.originalText;
-      }
+        return result;
+      },
     },
   },
 };
+
+type PrintFn = (path: FastPath<GoNode>) => builders.Doc;
+
+function printDoubleBlock(
+  node: GoDoubleBlock,
+  path: FastPath<GoNode>,
+  print: PrintFn
+): builders.Doc {
+  return builders.concat([
+    path.call(print, "firstChild"),
+    path.call(print, "secondChild"),
+  ]);
+}
+
+function printInline(
+  node: GoInline,
+  path: FastPath<GoNode>,
+  print: PrintFn
+): builders.Doc {
+  return printStatement(node.statement, node.delimiter);
+}
+
+function printStatement(statement: string, delimiter?: GoInlineDelimiter) {
+  const delimiters = getDelimiters(delimiter ?? "none");
+  return builders.group(
+    builders.concat([
+      "{{",
+      delimiters.start,
+      " ",
+      statement.trim(),
+      " ",
+      delimiters.end,
+      "}}",
+    ])
+  );
+}
+
+function getDelimiters(delimiter: GoInlineDelimiter) {
+  return {
+    ["angle-bracket"]: {
+      start: "<",
+      end: ">",
+    },
+    ["percent"]: {
+      start: "%",
+      end: "%",
+    },
+    ["none"]: {
+      start: "",
+      end: "",
+    },
+  }[delimiter];
+}
+
+export default GoTemplatePlugin;
