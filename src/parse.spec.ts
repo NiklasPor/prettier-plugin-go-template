@@ -94,14 +94,14 @@ UUID2
     const input = `{{ if }}
   <span>If Content</span>
 {{ else }}
-  <span>Else Content</span>
+  <span>{{ . }}</span>
 {{ end }}`;
 
     const expected: GoRoot = {
       type: "root",
       contentStart: 0,
       index: 0,
-      length: 83,
+      length: 78,
       content: expect.anything(),
       aliasedContent: `UUID0`,
       children: {
@@ -110,7 +110,7 @@ UUID2
           type: "double-block",
           parent: expect.anything(),
           index: 0,
-          length: 83,
+          length: 78,
           keyword: "else",
           statement: "else",
           firstChild: {
@@ -135,13 +135,23 @@ UUID2
             statement: "else",
             contentStart: 45,
             index: 35,
-            length: 48,
+            length: 43,
             parent: expect.anything(),
             content: expect.anything(),
             aliasedContent: `
-  <span>Else Content</span>
+  <span>UUID3</span>
 `,
-            children: {},
+            children: {
+              UUID3: {
+                type: "inline",
+                id: "UUID3",
+                delimiter: "none",
+                index: 54,
+                length: 7,
+                statement: ".",
+                parent: expect.anything(),
+              },
+            },
           },
         },
       },

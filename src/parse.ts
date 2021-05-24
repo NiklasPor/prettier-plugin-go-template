@@ -8,7 +8,6 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
   parsers,
   options
 ) => {
-  const blockStarts: RegExpMatchArray[] = [];
   const regex =
     /{{(?<delimiter><|%)?\s*(?<statement>(?<keyword>if|range|block|with|define|end|else)?.*?)\s*[>%]?}}/g;
   const blocks: {
@@ -46,33 +45,40 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
     }
 
     if (keyword === "end") {
-      let target = current;
-
       if (current.type !== "block") {
         throw Error("Encountered unexpted end keyword.");
       }
+
+      current.length = match[0].length + match.index - current.index;
+      current.content = text.substring(current.contentStart, match.index);
+      current.aliasedContent = aliasNodeContent(current);
 
       if (current.parent.type === "double-block") {
         if (idDoubleBlock(current.parent.secondChild)) {
           throw Error("Cannot end parent double block.");
         }
 
-        target = current.parent.secondChild;
-        target.length = match[0].length + match.index - target.index;
-
         current.parent.length =
           current.parent.secondChild.index +
           current.parent.secondChild.length -
           current.parent.firstChild.index;
-      } else {
-        target.length = match[0].length + match.index - target.index;
       }
-
-      target.content = text.substring(target.contentStart, match.index);
-      target.aliasedContent = aliasNodeContent(target);
 
       nodeStack.pop();
     } else if (isBlock(current) && keyword === "else") {
+      const secondChild: GoBlock = {
+        type: "block",
+        statement: statement,
+        children: {},
+        keyword: keyword,
+        index: match.index,
+        parent: current,
+        contentStart: match.index + match[0].length,
+        content: "",
+        aliasedContent: "",
+        length: -1,
+        id: getId(),
+      };
       const doubleBlock: GoDoubleBlock = {
         type: "double-block",
         parent: current.parent,
@@ -82,20 +88,9 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
         keyword: "else",
         id: current.id,
         firstChild: current,
-        secondChild: {
-          type: "block",
-          statement: statement,
-          children: {},
-          keyword: keyword,
-          index: match.index,
-          parent: current,
-          contentStart: match.index + match[0].length,
-          content: "",
-          aliasedContent: "",
-          length: -1,
-          id: getId(),
-        },
+        secondChild,
       };
+      secondChild.parent = doubleBlock;
 
       current.parent = doubleBlock;
       current.id = getId();
@@ -113,6 +108,9 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
       } else {
         throw Error("Could not find child in parent.");
       }
+
+      nodeStack.pop();
+      nodeStack.push(secondChild);
     } else if (keyword) {
       const block: GoBlock = {
         type: "block",
@@ -143,6 +141,10 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
 
       current.children[inline.id] = inline;
     }
+  }
+
+  if (!isRoot(nodeStack.pop()!)) {
+    throw Error("Missing end block.");
   }
 
   root.aliasedContent = aliasNodeContent(root);
