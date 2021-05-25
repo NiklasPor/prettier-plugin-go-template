@@ -124,20 +124,14 @@ const embed: Exclude<Printer<GoNode>["embed"], undefined> = (
       ? ""
       : printStatement("end");
 
-  if (!node.content.trim()) {
-    return builders.concat([startStatement, builders.hardline, endStatement]);
-  }
-
   const result = builders.concat([
     startStatement,
-    builders.group(
-      builders.indent(builders.concat([builders.hardline, mapped]))
-    ),
-    builders.hardline,
+    builders.indent(builders.concat([builders.softline, mapped])),
+    builders.softline,
     endStatement,
   ]);
 
-  return result;
+  return idDoubleBlock(node.parent) ? result : builders.group(result);
 };
 
 type PrintFn = (path: FastPath<GoNode>) => builders.Doc;
@@ -171,15 +165,13 @@ function printStatement(
     end: "",
   }
 ) {
-  return builders.group(
-    builders.concat([
-      "{{",
-      delimiter.start,
-      " ",
-      statement.trim(),
-      " ",
-      delimiter.end,
-      "}}",
-    ])
-  );
+  return builders.concat([
+    "{{",
+    delimiter.start,
+    " ",
+    statement.trim(),
+    " ",
+    delimiter.end,
+    "}}",
+  ]);
 }
