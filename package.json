@@ -1,6 +1,6 @@
 {
   "name": "prettier-plugin-go-template",
-  "version": "0.0.11-beta.5",
+  "version": "0.0.11-beta.6",
   "description": "Fixes prettier formatting for go templates.",
   "license": "MIT",
   "repository": {
