@@ -1,8 +1,6 @@
-import { match } from "assert";
 import { doc, FastPath, Parser, Printer, SupportLanguage } from "prettier";
 import { builders } from "prettier/doc";
 import { parsers as htmlParsers } from "prettier/parser-html";
-import { isNullOrUndefined } from "util";
 import {
   GoBlock,
   GoBlockKeyword,
@@ -178,8 +176,8 @@ function printDoubleBlock(
 
 function printInline(
   node: GoInline,
-  path: FastPath<GoNode>,
-  print: PrintFn
+  path?: FastPath<GoNode>,
+  print?: PrintFn
 ): builders.Doc {
   return printStatement(node.statement, {
     start: node.startDelimiter,
@@ -188,20 +186,11 @@ function printInline(
 }
 
 function printStartBlockStatement(node: GoBlock) {
-  return printStatement(node.statement, {
-    start: node.startDelimiter,
-    end: node.endDelimiter,
-  });
+  return printInline(node.start);
 }
 
 function printEndBlockStatement(node: GoBlock) {
-  const endKeyword: GoBlockKeyword =
-    node.keyword === "prettier-ignore-start" ? "prettier-ignore-end" : "end";
-
-  return printStatement(endKeyword, {
-    start: node.startDelimiter,
-    end: node.endDelimiter,
-  });
+  return printInline(node.end);
 }
 
 function printStatement(

@@ -48,6 +48,17 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
       throw Error("Match without statement.");
     }
 
+    const inline: GoInline = {
+      index: match.index,
+      length: match[0].length,
+      startDelimiter,
+      endDelimiter,
+      parent: current!,
+      type: "inline",
+      statement,
+      id: getId(),
+    };
+
     if (keyword === "end" || keyword === "prettier-ignore-end") {
       if (current.type !== "block") {
         throw Error("Encountered unexpted end keyword.");
@@ -56,6 +67,7 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
       current.length = match[0].length + match.index - current.index;
       current.content = text.substring(current.contentStart, match.index);
       current.aliasedContent = aliasNodeContent(current);
+      current.end = inline;
 
       if (current.parent.type === "double-block") {
         if (idDoubleBlock(current.parent.secondChild)) {
@@ -72,7 +84,8 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
     } else if (isBlock(current) && keyword === "else") {
       const secondChild: GoBlock = {
         type: "block",
-        statement: statement,
+        start: inline,
+        end: undefined as any,
         children: {},
         keyword: keyword,
         index: match.index,
@@ -88,10 +101,9 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
       const doubleBlock: GoDoubleBlock = {
         type: "double-block",
         parent: current.parent,
-        statement,
         index: current.index,
         length: -1,
-        keyword: "else",
+        keyword,
         id: current.id,
         firstChild: current,
         secondChild,
@@ -100,6 +112,7 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
 
       current.parent = doubleBlock;
       current.id = getId();
+      current.end = inline;
 
       current.length = match[0].length + match.index - current.index;
       current.content = text.substring(current.contentStart, match.index);
@@ -120,7 +133,8 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
     } else if (keyword) {
       const block: GoBlock = {
         type: "block",
-        statement: statement,
+        start: inline,
+        end: undefined as any,
         children: {},
         keyword: keyword as GoBlockKeyword,
         index: match.index,
@@ -137,17 +151,6 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
       current.children[block.id] = block;
       nodeStack.push(block);
     } else {
-      const inline: GoInline = {
-        index: match.index,
-        length: match[0].length,
-        startDelimiter,
-        endDelimiter,
-        parent: current!,
-        type: "inline",
-        statement,
-        id: getId(),
-      };
-
       current.children[inline.id] = inline;
     }
   }
@@ -203,6 +206,8 @@ export type GoRoot = { type: "root" } & Omit<
   | "id"
   | "startDelimiter"
   | "endDelimiter"
+  | "start"
+  | "end"
 >;
 
 export interface GoBaseNode {
@@ -210,7 +215,6 @@ export interface GoBaseNode {
   index: number;
   length: number;
   parent: GoBlock | GoRoot | GoDoubleBlock;
-  statement: string;
 }
 
 export interface GoBlock extends GoBaseNode, WithDelimiter {
@@ -219,6 +223,8 @@ export interface GoBlock extends GoBaseNode, WithDelimiter {
   children: {
     [id: string]: GoNode;
   };
+  start: GoInline;
+  end: GoInline;
   content: string;
   aliasedContent: string;
   contentStart: number;
@@ -242,6 +248,7 @@ export interface WithDelimiter {
 
 export interface GoInline extends GoBaseNode, WithDelimiter {
   type: "inline";
+  statement: string;
 }
 
 export function isInline(node: GoNode): node is GoInline {
