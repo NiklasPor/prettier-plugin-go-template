@@ -179,10 +179,17 @@ function printInline(
   path?: FastPath<GoNode>,
   print?: PrintFn
 ): builders.Doc {
-  return printStatement(node.statement, {
-    start: node.startDelimiter,
-    end: node.endDelimiter,
-  });
+  const { parent } = getFirstBlockParent(node);
+  const hasLineBreak = !!parent.aliasedContent.match(`${node.id}\\s*?\n`);
+
+  const result: builders.Doc[] = [
+    printStatement(node.statement, {
+      start: node.startDelimiter,
+      end: node.endDelimiter,
+    }),
+  ];
+
+  return builders.group(builders.concat(result), { shouldBreak: hasLineBreak });
 }
 
 function printStartBlockStatement(node: GoBlock) {
