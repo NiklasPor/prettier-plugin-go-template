@@ -1,13 +1,21 @@
+import { match } from "assert";
 import { doc, FastPath, Parser, Printer, SupportLanguage } from "prettier";
 import { builders } from "prettier/doc";
 import { parsers as htmlParsers } from "prettier/parser-html";
+import { isNullOrUndefined } from "util";
 import {
+  GoBlock,
+  GoBlockKeyword,
   GoDoubleBlock,
   GoInline,
   GoInlineEndDelimiter,
   GoInlineStartDelimiter,
   GoNode,
+  GoRoot,
   idDoubleBlock,
+  isBlock,
+  isInline,
+  isRoot,
   parseGoTemplate,
 } from "./parse";
 
@@ -37,6 +45,8 @@ export const parsers = {
     astFormat: PLUGIN_KEY,
     preprocess: (text) => text,
     parse: parseGoTemplate,
+    locStart: (node) => node.index,
+    locEnd: (node) => node.index + node.length,
   },
 };
 export const printers = {
@@ -77,7 +87,18 @@ const embed: Exclude<Printer<GoNode>["embed"], undefined> = (
 ) => {
   const node = path.getNode();
 
-  if (!(node?.type === "block" || node?.type === "root")) {
+  if (!node) {
+    return null;
+  }
+
+  if (hasPrettierIgnoreLine(node)) {
+    return options.originalText.substring(
+      options.locStart(node),
+      options.locEnd(node)
+    );
+  }
+
+  if (node.type !== "block" && node.type !== "root") {
     return null;
   }
 
@@ -118,11 +139,19 @@ const embed: Exclude<Printer<GoNode>["embed"], undefined> = (
     mapped.pop();
   }
 
-  const startStatement = printStatement(node.statement);
+  const startStatement = printStartBlockStatement(node);
   const endStatement =
     idDoubleBlock(node.parent) && node.parent.firstChild === node
       ? ""
-      : printStatement("end");
+      : printEndBlockStatement(node);
+
+  if (isPrettierIgnoreBlock(node)) {
+    return builders.concat([
+      startStatement,
+      printPlainBlock(node.content),
+      endStatement,
+    ]);
+  }
 
   const result = builders.concat([
     startStatement,
@@ -158,6 +187,23 @@ function printInline(
   });
 }
 
+function printStartBlockStatement(node: GoBlock) {
+  return printStatement(node.statement, {
+    start: node.startDelimiter,
+    end: node.endDelimiter,
+  });
+}
+
+function printEndBlockStatement(node: GoBlock) {
+  const endKeyword: GoBlockKeyword =
+    node.keyword === "prettier-ignore-start" ? "prettier-ignore-end" : "end";
+
+  return printStatement(endKeyword, {
+    start: node.startDelimiter,
+    end: node.endDelimiter,
+  });
+}
+
 function printStatement(
   statement: string,
   delimiter: { start: GoInlineStartDelimiter; end: GoInlineEndDelimiter } = {
@@ -173,5 +219,58 @@ function printStatement(
     " ",
     delimiter.end,
     "}}",
+  ]);
+}
+
+function hasPrettierIgnoreLine(node: GoNode) {
+  if (isRoot(node)) {
+    return false;
+  }
+
+  const { parent, child } = getFirstBlockParent(node);
+
+  const regex = new RegExp(
+    `(?:<!--|{{).*?prettier-ignore.*?(?:-->|}})\n.*${child.id}`
+  );
+
+  return !!parent.aliasedContent.match(regex);
+}
+
+function isPrettierIgnoreBlock(node: GoNode) {
+  return node.type === "block" && node.keyword === "prettier-ignore-start";
+}
+
+function getFirstBlockParent(node: Exclude<GoNode, GoRoot>): {
+  parent: GoBlock | GoRoot;
+  child: typeof node;
+} {
+  let previous = node;
+  let current = node.parent;
+
+  while (!isBlock(current) && !isRoot(current)) {
+    previous = current;
+    current = current.parent;
+  }
+
+  return {
+    child: previous,
+    parent: current,
+  };
+}
+
+function printPlainBlock(text: string): builders.Doc {
+  const isTextEmpty = (input: string) => !!input.match(/^\s*$/);
+
+  const lines = text.split("\n");
+
+  const segments = lines.filter(
+    (value, i) => !(i == 0 || i == lines.length - 1) || !isTextEmpty(value)
+  );
+
+  return builders.concat([
+    ...segments.map((content) =>
+      builders.concat([builders.hardline, builders.trim, content])
+    ),
+    builders.hardline,
   ]);
 }

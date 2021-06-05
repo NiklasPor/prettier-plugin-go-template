@@ -9,7 +9,7 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
   options
 ) => {
   const regex =
-    /{{(?<startdelimiter>-|<|%|\/\*)?\s*(?<statement>(?<keyword>if|range|block|with|define|end|else)?.*?)\s*(?<endDelimiter>-|>|%|\*\/)?}}/g;
+    /{{(?<startdelimiter>-|<|%|\/\*)?\s*(?<statement>(?<keyword>if|range|block|with|define|end|else|prettier-ignore-start|prettier-ignore-end)?.*?)\s*(?<endDelimiter>-|>|%|\*\/)?}}/g;
   const blocks: {
     start: RegExpMatchArray;
     end: RegExpMatchArray;
@@ -29,7 +29,7 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
 
   for (let match of text.matchAll(regex)) {
     const current = last(nodeStack);
-    const keyword = match.groups?.keyword;
+    const keyword = match.groups?.keyword as GoBlockKeyword | undefined;
     const statement = match.groups?.statement;
     const startDelimiter = (match.groups?.startdelimiter ??
       "") as GoInlineStartDelimiter;
@@ -48,7 +48,7 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
       throw Error("Match without statement.");
     }
 
-    if (keyword === "end") {
+    if (keyword === "end" || keyword === "prettier-ignore-end") {
       if (current.type !== "block") {
         throw Error("Encountered unexpted end keyword.");
       }
@@ -82,6 +82,8 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
         aliasedContent: "",
         length: -1,
         id: getId(),
+        startDelimiter,
+        endDelimiter,
       };
       const doubleBlock: GoDoubleBlock = {
         type: "double-block",
@@ -128,6 +130,8 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
         aliasedContent: "",
         length: -1,
         id: getId(),
+        startDelimiter,
+        endDelimiter,
       };
 
       current.children[block.id] = block;
@@ -185,11 +189,20 @@ export type GoBlockKeyword =
   | "block"
   | "with"
   | "define"
-  | "else";
+  | "else"
+  | "prettier-ignore-start"
+  | "prettier-ignore-end"
+  | "end";
 
 export type GoRoot = { type: "root" } & Omit<
   GoBlock,
-  "type" | "keyword" | "parent" | "statement" | "id"
+  | "type"
+  | "keyword"
+  | "parent"
+  | "statement"
+  | "id"
+  | "startDelimiter"
+  | "endDelimiter"
 >;
 
 export interface GoBaseNode {
@@ -200,7 +213,7 @@ export interface GoBaseNode {
   statement: string;
 }
 
-export interface GoBlock extends GoBaseNode {
+export interface GoBlock extends GoBaseNode, WithDelimiter {
   type: "block";
   keyword: GoBlockKeyword;
   children: {
@@ -222,10 +235,13 @@ export type GoSharedDelimiter = "%" | "-" | "";
 export type GoInlineStartDelimiter = "<" | "/*" | GoSharedDelimiter;
 export type GoInlineEndDelimiter = ">" | "*/" | GoSharedDelimiter;
 
-export interface GoInline extends GoBaseNode {
-  type: "inline";
+export interface WithDelimiter {
   startDelimiter: GoInlineStartDelimiter;
   endDelimiter: GoInlineEndDelimiter;
+}
+
+export interface GoInline extends GoBaseNode, WithDelimiter {
+  type: "inline";
 }
 
 export function isInline(node: GoNode): node is GoInline {

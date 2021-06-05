@@ -41,6 +41,8 @@ UUID1
           parent: expect.anything(),
         },
         UUID1: {
+          startDelimiter: "",
+          endDelimiter: "",
           id: "UUID1",
           type: "block",
           keyword: "define",
@@ -57,6 +59,8 @@ UUID2
 `,
           children: {
             UUID2: {
+              startDelimiter: "",
+              endDelimiter: "",
               id: "UUID2",
               type: "block",
               keyword: "if",
@@ -117,6 +121,8 @@ UUID2
           statement: "else",
           firstChild: {
             id: "UUID2",
+            startDelimiter: "",
+            endDelimiter: "",
             type: "block",
             keyword: "if",
             statement: "if",
@@ -132,6 +138,8 @@ UUID2
           },
           secondChild: {
             id: "UUID1",
+            startDelimiter: "",
+            endDelimiter: "",
             type: "block",
             keyword: "else",
             statement: "else",
