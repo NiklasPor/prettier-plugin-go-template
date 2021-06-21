@@ -1,4 +1,11 @@
-import { doc, FastPath, Parser, Printer, SupportLanguage } from "prettier";
+import {
+  doc,
+  FastPath,
+  Parser,
+  ParserOptions,
+  Printer,
+  SupportLanguage,
+} from "prettier";
 import { builders } from "prettier/doc";
 import { parsers as htmlParsers } from "prettier/parser-html";
 import {
@@ -16,6 +23,7 @@ import {
   isRoot,
   parseGoTemplate,
 } from "./parse";
+import { utils } from "prettier/doc";
 
 const htmlParser = htmlParsers.html;
 const PLUGIN_KEY = "go-template";
@@ -54,7 +62,7 @@ export const printers = {
 
       switch (node?.type) {
         case "inline":
-          return printInline(node, path, print);
+          return printInline(node, path, options, print);
         case "double-block":
           return printDoubleBlock(node, path, print);
       }
@@ -137,28 +145,44 @@ const embed: Exclude<Printer<GoNode>["embed"], undefined> = (
     mapped.pop();
   }
 
-  const startStatement = printStartBlockStatement(node);
+  const startStatement = path.call(print, "start");
   const endStatement =
     idDoubleBlock(node.parent) && node.parent.firstChild === node
       ? ""
-      : printEndBlockStatement(node);
+      : path.call(print, "end");
 
   if (isPrettierIgnoreBlock(node)) {
     return builders.concat([
-      startStatement,
+      utils.removeLines(startStatement),
       printPlainBlock(node.content),
       endStatement,
     ]);
   }
 
+  const content = node.aliasedContent.trim()
+    ? builders.indent(builders.concat([builders.softline, mapped]))
+    : "";
+
   const result = builders.concat([
     startStatement,
-    builders.indent(builders.concat([builders.softline, mapped])),
+    content,
     builders.softline,
     endStatement,
   ]);
 
-  return idDoubleBlock(node.parent) ? result : builders.group(result);
+  return idDoubleBlock(node.parent)
+    ? result
+    : builders.group(
+        builders.concat([
+          builders.group(result),
+          isFollowedByEmptyLine(node.end, options.originalText)
+            ? builders.softline
+            : "",
+        ]),
+        {
+          shouldBreak: hasNodeLinebreak(node.end, options.originalText),
+        }
+      );
 };
 
 type PrintFn = (path: FastPath<GoNode>) => builders.Doc;
@@ -176,11 +200,11 @@ function printDoubleBlock(
 
 function printInline(
   node: GoInline,
-  path?: FastPath<GoNode>,
-  print?: PrintFn
+  path: FastPath<GoNode>,
+  options: ParserOptions<GoNode>,
+  print: PrintFn
 ): builders.Doc {
-  const { parent } = getFirstBlockParent(node);
-  const hasLineBreak = !!parent.aliasedContent.match(`${node.id}\\s*?\n`);
+  const hasLineBreak = hasNodeLinebreak(node, options.originalText);
 
   const result: builders.Doc[] = [
     printStatement(node.statement, {
@@ -189,15 +213,27 @@ function printInline(
     }),
   ];
 
-  return builders.group(builders.concat(result), { shouldBreak: hasLineBreak });
+  return builders.group(
+    builders.concat([
+      ...result,
+      isFollowedByEmptyLine(node, options.originalText)
+        ? builders.softline
+        : "",
+    ]),
+    {
+      shouldBreak: hasLineBreak && !isBlockEnd(node) && !isBlockStart(node),
+    }
+  );
 }
 
-function printStartBlockStatement(node: GoBlock) {
-  return printInline(node.start);
+function isBlockEnd(node: GoInline) {
+  const { parent } = getFirstBlockParent(node);
+  return isBlock(parent) && parent.end === node;
 }
 
-function printEndBlockStatement(node: GoBlock) {
-  return printInline(node.end);
+function isBlockStart(node: GoInline) {
+  const { parent } = getFirstBlockParent(node);
+  return isBlock(parent) && parent.start === node;
 }
 
 function printStatement(
@@ -207,15 +243,17 @@ function printStatement(
     end: "",
   }
 ) {
-  return builders.concat([
-    "{{",
-    delimiter.start,
-    " ",
-    statement.trim(),
-    " ",
-    delimiter.end,
-    "}}",
-  ]);
+  return builders.group(
+    builders.concat([
+      "{{",
+      delimiter.start,
+      " ",
+      statement.trim(),
+      " ",
+      delimiter.end,
+      "}}",
+    ])
+  );
 }
 
 function hasPrettierIgnoreLine(node: GoNode) {
@@ -234,6 +272,28 @@ function hasPrettierIgnoreLine(node: GoNode) {
 
 function isPrettierIgnoreBlock(node: GoNode) {
   return node.type === "block" && node.keyword === "prettier-ignore-start";
+}
+
+function hasNodeLinebreak(node: GoInline, source: string) {
+  const start = node.index + node.length;
+  const end = source.indexOf("\n", start);
+  const suffix = source.substring(start, end);
+
+  return !suffix;
+}
+
+function isFollowedByEmptyLine(node: GoInline, source: string) {
+  const start = node.index + node.length;
+  const firstLineBreak = source.indexOf("\n", start);
+  const secondLineBreak = source.indexOf("\n", firstLineBreak + 1);
+  const emptyLine = source
+    .substring(firstLineBreak + 1, secondLineBreak)
+    .trim();
+  const isLastNode = !!source.substring(start).match(/^\s*$/);
+
+  return (
+    firstLineBreak !== -1 && secondLineBreak !== -1 && !emptyLine && !isLastNode
+  );
 }
 
 function getFirstBlockParent(node: Exclude<GoNode, GoRoot>): {
