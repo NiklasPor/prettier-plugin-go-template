@@ -164,20 +164,18 @@ const embed: Exclude<Printer<GoNode>["embed"], undefined> = (
     endStatement,
   ]);
 
-  return isMultiBlock(node.parent)
-    ? result
-    : builders.group(
-        builders.concat([
-          builders.group(result),
-          !!node.end && isFollowedByEmptyLine(node.end, options.originalText)
-            ? builders.softline
-            : "",
-        ]),
-        {
-          shouldBreak:
-            !!node.end && hasNodeLinebreak(node.end, options.originalText),
-        }
-      );
+  const emptyLine =
+    !!node.end && isFollowedByEmptyLine(node.end, options.originalText)
+      ? builders.softline
+      : "";
+
+  if (isMultiBlock(node.parent)) {
+    return builders.concat([result, emptyLine]);
+  }
+
+  return builders.group(builders.concat([builders.group(result), emptyLine]), {
+    shouldBreak: !!node.end && hasNodeLinebreak(node.end, options.originalText),
+  });
 };
 
 type PrintFn = (path: FastPath<GoNode>) => builders.Doc;
