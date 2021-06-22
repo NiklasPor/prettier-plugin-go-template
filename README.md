@@ -38,6 +38,20 @@ Make sure to always have installed **both** dependencies:
 Also make sure that they are installed inside the same scope.
 Install both globally (`npm i -g`) or locally – otherwise prettier may not pick up the plugin.
 
+## Additional Options
+
+```json
+// .prettierrc
+{
+  /**
+   * Enables & disables spacing between go statements.
+   * E.g. {{ statement }} vs {{statement}}.
+   * Default: true
+   */
+  "goTemplateBracketSpacing": true
+}
+```
+
 ## Changelog
 
 ### v0.0.10

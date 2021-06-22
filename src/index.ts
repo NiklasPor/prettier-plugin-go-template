@@ -25,6 +25,25 @@ import {
 const htmlParser = htmlParsers.html;
 const PLUGIN_KEY = "go-template";
 
+type ExtendedParserOptions = ParserOptions<GoNode> &
+  PrettierPluginGoTemplateParserOptions;
+
+export type PrettierPluginGoTemplateParserOptions = {
+  goTemplateBracketSpacing: boolean;
+};
+
+export const options: {
+  [K in keyof PrettierPluginGoTemplateParserOptions]: any;
+} = {
+  goTemplateBracketSpacing: {
+    type: "boolean",
+    category: "Global",
+    description:
+      "Specifies whether the brackets should have spacing around the statement.",
+    default: true,
+  },
+};
+
 export const languages: SupportLanguage[] = [
   {
     name: "GoTemplate",
@@ -54,7 +73,7 @@ export const parsers = {
 };
 export const printers = {
   [PLUGIN_KEY]: <Printer<GoNode>>{
-    print: (path, options, print) => {
+    print: (path, options: ExtendedParserOptions, print) => {
       const node = path.getNode();
 
       switch (node?.type) {
@@ -191,13 +210,13 @@ function printMultiBlock(
 function printInline(
   node: GoInline,
   path: FastPath<GoNode>,
-  options: ParserOptions<GoNode>,
+  options: ExtendedParserOptions,
   print: PrintFn
 ): builders.Doc {
   const hasLineBreak = hasNodeLinebreak(node, options.originalText);
 
   const result: builders.Doc[] = [
-    printStatement(node.statement, {
+    printStatement(node.statement, options.goTemplateBracketSpacing, {
       start: node.startDelimiter,
       end: node.endDelimiter,
     }),
@@ -228,11 +247,13 @@ function isBlockStart(node: GoInline) {
 
 function printStatement(
   statement: string,
+  addSpaces: boolean,
   delimiter: { start: GoInlineStartDelimiter; end: GoInlineEndDelimiter } = {
     start: "",
     end: "",
   }
 ) {
+  const space = addSpaces ? " " : "";
   const shouldBreak = statement.includes("\n");
 
   const content = shouldBreak
@@ -250,9 +271,9 @@ function printStatement(
     builders.concat([
       "{{",
       delimiter.start,
-      " ",
+      space,
       ...content,
-      shouldBreak ? "" : " ",
+      shouldBreak ? "" : space,
       delimiter.end,
       "}}",
     ])
