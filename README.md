@@ -5,7 +5,7 @@
 Fixes formatting for go template files. The only peer dependency is [prettier](https://www.npmjs.com/package/prettier).
 
 ```bash
-npm install --save-dev prettier-plugin-go-template
+npm install --save-dev prettier prettier-plugin-go-template
 ```
 
 The following file types are detected automatically:
