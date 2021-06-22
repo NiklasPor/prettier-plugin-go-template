@@ -32,7 +32,9 @@ tests
       if (expectedError) {
         expect(format).toThrow(expectedError);
       } else {
-        expect(format()).toEqual(expected);
+        const result = format();
+        expect(result).toEqual(expected);
+        expect(prettify(result)).toEqual(expected);
       }
     })
   );
