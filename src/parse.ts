@@ -70,26 +70,24 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
       current.end = inline;
 
       if (current.parent.type === "double-block") {
-        if (idDoubleBlock(current.parent.secondChild)) {
-          throw Error("Cannot end parent double block.");
-        }
+        const firstChild = current.parent.blocks[0];
+        const lastChild =
+          current.parent.blocks[current.parent.blocks.length - 1];
 
         current.parent.length =
-          current.parent.secondChild.index +
-          current.parent.secondChild.length -
-          current.parent.firstChild.index;
+          lastChild.index + lastChild.length - firstChild.index;
       }
 
       nodeStack.pop();
     } else if (isBlock(current) && keyword === "else") {
-      const secondChild: GoBlock = {
+      const nextChild: GoBlock = {
         type: "block",
         start: inline,
-        end: undefined as any,
+        end: null,
         children: {},
         keyword: keyword,
         index: match.index,
-        parent: current,
+        parent: current.parent,
         contentStart: match.index + match[0].length,
         content: "",
         aliasedContent: "",
@@ -98,43 +96,41 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
         startDelimiter,
         endDelimiter,
       };
-      const doubleBlock: GoDoubleBlock = {
-        type: "double-block",
-        parent: current.parent,
-        index: current.index,
-        length: -1,
-        keyword,
-        id: current.id,
-        firstChild: current,
-        secondChild,
-      };
-      secondChild.parent = doubleBlock;
 
-      current.parent = doubleBlock;
+      if (isMultiBlock(current.parent)) {
+        current.parent.blocks.push(nextChild);
+      } else {
+        const multiBlock: GoMultiBlock = {
+          type: "double-block",
+          parent: current.parent,
+          index: current.index,
+          length: -1,
+          keyword,
+          id: current.id,
+          blocks: [current, nextChild],
+        };
+        nextChild.parent = multiBlock;
+        current.parent = multiBlock;
+
+        if ("children" in multiBlock.parent) {
+          multiBlock.parent.children[multiBlock.id] = multiBlock;
+        } else {
+          throw Error("Could not find child in parent.");
+        }
+      }
+
       current.id = getId();
-      current.end = inline;
-
       current.length = match[0].length + match.index - current.index;
       current.content = text.substring(current.contentStart, match.index);
       current.aliasedContent = aliasNodeContent(current);
 
-      if ("children" in doubleBlock.parent) {
-        doubleBlock.parent.children[doubleBlock.id] = doubleBlock;
-      } else if (doubleBlock.parent.firstChild.id === doubleBlock.id) {
-        doubleBlock.parent.firstChild = doubleBlock;
-      } else if (doubleBlock.parent.secondChild.id === doubleBlock.id) {
-        doubleBlock.parent.secondChild = doubleBlock;
-      } else {
-        throw Error("Could not find child in parent.");
-      }
-
       nodeStack.pop();
-      nodeStack.push(secondChild);
+      nodeStack.push(nextChild);
     } else if (keyword) {
       const block: GoBlock = {
         type: "block",
         start: inline,
-        end: undefined as any,
+        end: null,
         children: {},
         keyword: keyword as GoBlockKeyword,
         index: match.index,
@@ -184,7 +180,7 @@ function last<T>(array: T[]): T | undefined {
   return array[array.length - 1];
 }
 
-export type GoNode = GoRoot | GoBlock | GoInline | GoDoubleBlock;
+export type GoNode = GoRoot | GoBlock | GoInline | GoMultiBlock;
 
 export type GoBlockKeyword =
   | "if"
@@ -214,7 +210,7 @@ export interface GoBaseNode {
   id: string;
   index: number;
   length: number;
-  parent: GoBlock | GoRoot | GoDoubleBlock;
+  parent: GoBlock | GoRoot | GoMultiBlock;
 }
 
 export interface GoBlock extends GoBaseNode, WithDelimiter {
@@ -224,16 +220,15 @@ export interface GoBlock extends GoBaseNode, WithDelimiter {
     [id: string]: GoNode;
   };
   start: GoInline;
-  end: GoInline;
+  end: GoInline | null;
   content: string;
   aliasedContent: string;
   contentStart: number;
 }
 
-export interface GoDoubleBlock extends GoBaseNode {
+export interface GoMultiBlock extends GoBaseNode {
   type: "double-block";
-  firstChild: GoBlock | GoDoubleBlock;
-  secondChild: GoBlock | GoDoubleBlock;
+  blocks: (GoBlock | GoMultiBlock)[];
   keyword: GoBlockKeyword;
 }
 
@@ -259,7 +254,7 @@ export function isBlock(node: GoNode): node is GoBlock {
   return node.type === "block";
 }
 
-export function idDoubleBlock(node: GoNode): node is GoDoubleBlock {
+export function isMultiBlock(node: GoNode): node is GoMultiBlock {
   return node.type === "double-block";
 }
 

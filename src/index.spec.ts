@@ -13,7 +13,7 @@ const testFolder = join(__dirname, "tests");
 const tests = readdirSync(testFolder);
 
 tests
-  // .filter((t) => t === "attribute-in-else")
+  // .filter((t) => t === "else-if")
   .forEach((test) =>
     it(test, () => {
       const path = join(testFolder, test);

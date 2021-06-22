@@ -1,4 +1,4 @@
-import { GoBlock, GoDoubleBlock, GoRoot } from "./parse";
+import { GoBlock, GoMultiBlock, GoRoot } from "./parse";
 import { parseGoTemplate } from "./parse";
 import * as id from "./create-id-generator";
 describe("parseGoTemplate", () => {

@@ -6,24 +6,21 @@ import {
   Printer,
   SupportLanguage,
 } from "prettier";
-import { builders } from "prettier/doc";
+import { builders, utils } from "prettier/doc";
 import { parsers as htmlParsers } from "prettier/parser-html";
 import {
   GoBlock,
-  GoBlockKeyword,
-  GoDoubleBlock,
   GoInline,
   GoInlineEndDelimiter,
   GoInlineStartDelimiter,
+  GoMultiBlock,
   GoNode,
   GoRoot,
-  idDoubleBlock,
   isBlock,
-  isInline,
+  isMultiBlock,
   isRoot,
   parseGoTemplate,
 } from "./parse";
-import { utils } from "prettier/doc";
 
 const htmlParser = htmlParsers.html;
 const PLUGIN_KEY = "go-template";
@@ -64,7 +61,7 @@ export const printers = {
         case "inline":
           return printInline(node, path, options, print);
         case "double-block":
-          return printDoubleBlock(node, path, print);
+          return printMultiBlock(node, path, print);
       }
 
       console.error(
@@ -146,14 +143,11 @@ const embed: Exclude<Printer<GoNode>["embed"], undefined> = (
   }
 
   const startStatement = path.call(print, "start");
-  const endStatement =
-    idDoubleBlock(node.parent) && node.parent.firstChild === node
-      ? ""
-      : path.call(print, "end");
+  const endStatement = node.end ? path.call(print, "end") : "";
 
   if (isPrettierIgnoreBlock(node)) {
     return builders.concat([
-      utils.removeLines(startStatement),
+      utils.removeLines(path.call(print, "start")),
       printPlainBlock(node.content),
       endStatement,
     ]);
@@ -170,32 +164,30 @@ const embed: Exclude<Printer<GoNode>["embed"], undefined> = (
     endStatement,
   ]);
 
-  return idDoubleBlock(node.parent)
+  return isMultiBlock(node.parent)
     ? result
     : builders.group(
         builders.concat([
           builders.group(result),
-          isFollowedByEmptyLine(node.end, options.originalText)
+          !!node.end && isFollowedByEmptyLine(node.end, options.originalText)
             ? builders.softline
             : "",
         ]),
         {
-          shouldBreak: hasNodeLinebreak(node.end, options.originalText),
+          shouldBreak:
+            !!node.end && hasNodeLinebreak(node.end, options.originalText),
         }
       );
 };
 
 type PrintFn = (path: FastPath<GoNode>) => builders.Doc;
 
-function printDoubleBlock(
-  node: GoDoubleBlock,
+function printMultiBlock(
+  node: GoMultiBlock,
   path: FastPath<GoNode>,
   print: PrintFn
 ): builders.Doc {
-  return builders.concat([
-    path.call(print, "firstChild"),
-    path.call(print, "secondChild"),
-  ]);
+  return builders.concat([...path.map(print, "blocks")]);
 }
 
 function printInline(
