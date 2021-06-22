@@ -15,16 +15,16 @@ The following file types are detected automatically:
 
 To use it with GoHugo and basic `.html` files, you'll have to override the used parser inside your `.prettierrc` file:
 
-```json
+```js
 {
-  "overrides": [
+  overrides: [
     {
-      "files": ["*.html"],
-      "options": {
-        "parser": "go-template"
-      }
-    }
-  ]
+      files: ["*.html"],
+      options: {
+        parser: "go-template",
+      },
+    },
+  ],
 }
 ```
 
@@ -40,7 +40,7 @@ Install both globally (`npm i -g`) or locally – otherwise prettier may not pic
 
 ## Additional Options
 
-```json
+```js
 // .prettierrc
 {
   /**
