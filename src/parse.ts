@@ -1,6 +1,4 @@
 import { Parser } from "prettier";
-import { getMaxListeners } from "process";
-import { parentPort } from "worker_threads";
 import { createIdGenerator } from "./create-id-generator";
 
 export const parseGoTemplate: Parser<GoNode>["parse"] = (
@@ -9,7 +7,7 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
   options
 ) => {
   const regex =
-    /{{(?<startdelimiter>-|<|%|\/\*)?\s*(?<statement>(?<keyword>if|range|block|with|define|end|else|prettier-ignore-start|prettier-ignore-end)?.*?)\s*(?<endDelimiter>-|>|%|\*\/)?}}/g;
+    /{{(?<startdelimiter>-|<|%|\/\*)?\s*(?<statement>(?<keyword>if|range|block|with|define|end|else|prettier-ignore-start|prettier-ignore-end)?[\s\S]*?)\s*(?<endDelimiter>-|>|%|\*\/)?}}/g;
   const blocks: {
     start: RegExpMatchArray;
     end: RegExpMatchArray;

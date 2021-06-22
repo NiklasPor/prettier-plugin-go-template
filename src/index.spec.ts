@@ -12,29 +12,27 @@ const prettify = (code: string) =>
 const testFolder = join(__dirname, "tests");
 const tests = readdirSync(testFolder);
 
-tests
-  // .filter((t) => t === "else-if")
-  .forEach((test) =>
-    it(test, () => {
-      const path = join(testFolder, test);
-      const input = readFileSync(join(path, "input.html")).toString();
-      const expected = readFileSync(join(path, "expected.html")).toString();
+tests.forEach((test) =>
+  it(test, () => {
+    const path = join(testFolder, test);
+    const input = readFileSync(join(path, "input.html")).toString();
+    const expected = readFileSync(join(path, "expected.html")).toString();
 
-      if (test.startsWith("invalid")) {
-        jest.spyOn(console, "error").mockImplementationOnce(() => {});
-      }
+    if (test.startsWith("invalid")) {
+      jest.spyOn(console, "error").mockImplementation(() => {});
+    }
 
-      const format = () => prettify(input);
+    const format = () => prettify(input);
 
-      const expectedError = expected.match(/Error\("(?<message>.*)"\)/)?.groups
-        ?.message;
+    const expectedError = expected.match(/Error\("(?<message>.*)"\)/)?.groups
+      ?.message;
 
-      if (expectedError) {
-        expect(format).toThrow(expectedError);
-      } else {
-        const result = format();
-        expect(result).toEqual(expected);
-        expect(prettify(result)).toEqual(expected);
-      }
-    })
-  );
+    if (expectedError) {
+      expect(format).toThrow(expectedError);
+    } else {
+      const result = format();
+      expect(result).toEqual(expected);
+      expect(prettify(result)).toEqual(expected);
+    }
+  })
+);

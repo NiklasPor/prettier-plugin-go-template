@@ -233,13 +233,26 @@ function printStatement(
     end: "",
   }
 ) {
+  const shouldBreak = statement.includes("\n");
+
+  const content = shouldBreak
+    ? statement
+        .trim()
+        .split("\n")
+        .map((line, _, array) =>
+          array.indexOf(line) === array.length - 1
+            ? builders.concat([line.trim(), builders.softline])
+            : builders.indent(builders.concat([line.trim(), builders.softline]))
+        )
+    : [statement.trim()];
+
   return builders.group(
     builders.concat([
       "{{",
       delimiter.start,
       " ",
-      statement.trim(),
-      " ",
+      ...content,
+      shouldBreak ? "" : " ",
       delimiter.end,
       "}}",
     ])
