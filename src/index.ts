@@ -1,48 +1,53 @@
 import {
   doc,
+  FastPath,
   Parser,
+  ParserOptions,
   Printer,
   SupportLanguage,
-  ParserOptions,
-  Options,
 } from "prettier";
-// tslint:disable-next-line: no-submodule-imports
+import { builders, utils } from "prettier/doc";
 import { parsers as htmlParsers } from "prettier/parser-html";
+import {
+  GoBlock,
+  GoInline,
+  GoInlineEndDelimiter,
+  GoInlineStartDelimiter,
+  GoMultiBlock,
+  GoNode,
+  GoRoot,
+  isBlock,
+  isMultiBlock,
+  isRoot,
+  parseGoTemplate,
+} from "./parse";
 
 const htmlParser = htmlParsers.html;
+const PLUGIN_KEY = "go-template";
 
-let _id = 0;
-const getId = () => {
-  _id = (_id + 1) % Number.MAX_SAFE_INTEGER;
-  return _id.toString();
+type ExtendedParserOptions = ParserOptions<GoNode> &
+  PrettierPluginGoTemplateParserOptions;
+
+export type PrettierPluginGoTemplateParserOptions = {
+  goTemplateBracketSpacing: boolean;
 };
 
-const buildReplacement = (input: string, blockHashes: string[]) => {
-  const id = getId();
-
-  if (input.match(/{{[-<]? (?:if|range|block|with|define)/)) {
-    blockHashes.push(id);
-    return `<BPGT${id}EPGT>`;
-  }
-
-  if (input.match(/{{[-<]? end/)) {
-    return `</BPGT${blockHashes.pop()}EPGT>`;
-  }
-
-  return `BPGT${id}EPGT`;
-};
-
-export const parsers = {
-  "go-template": <Parser>{
-    ...htmlParser,
-    astFormat: "go-template",
+export const options: {
+  [K in keyof PrettierPluginGoTemplateParserOptions]: any;
+} = {
+  goTemplateBracketSpacing: {
+    type: "boolean",
+    category: "Global",
+    description:
+      "Specifies whether the brackets should have spacing around the statement.",
+    default: true,
   },
 };
 
 export const languages: SupportLanguage[] = [
   {
     name: "GoTemplate",
-    parsers: ["go-template"],
+    parsers: [PLUGIN_KEY],
     extensions: [
       ".go.html",
       ".gohtml",
@@ -56,171 +61,303 @@ export const languages: SupportLanguage[] = [
     vscodeLanguageIds: ["gotemplate", "gohtml", "GoTemplate", "GoHTML"],
   },
 ];
+export const parsers = {
+  [PLUGIN_KEY]: <Parser<GoNode>>{
+    ...htmlParser,
+    astFormat: PLUGIN_KEY,
+    preprocess: (text) => text,
+    parse: parseGoTemplate,
+    locStart: (node) => node.index,
+    locEnd: (node) => node.index + node.length,
+  },
+};
+export const printers = {
+  [PLUGIN_KEY]: <Printer<GoNode>>{
+    print: (path, options: ExtendedParserOptions, print) => {
+      const node = path.getNode();
 
-function replaceSingles(
-  input: string,
-  replacements: Map<string, string>,
-  replacedHashes = new Array<string>()
-) {
-  const regexp = /(?:<!--BPGT)?BPGT.*?EPGT(?:EPGT-->)?/g;
+      switch (node?.type) {
+        case "inline":
+          return printInline(node, path, options, print);
+        case "double-block":
+          return printMultiBlock(node, path, print);
+        case "unformattable":
+          return printPlainBlock(node.content, false);
+      }
 
-  let result = input;
-  let match: RegExpExecArray | null;
+      console.error(
+        `An error occured during printing. Found invalid node ${node?.type}`
+      );
 
-  // tslint:disable-next-line: no-conditional-assignment
-  while ((match = regexp.exec(input)) != null) {
-    const hash = match[0];
+      return options.originalText;
+    },
+    embed: (path, print, textToDoc, options) => {
+      try {
+        return embed(path, print, textToDoc, options);
+      } catch (e) {
+        console.error("Formatting failed.", e);
+      }
 
-    const replacement = replacements.get(hash);
+      return options.originalText;
+    },
+  },
+};
 
-    if (replacement) {
-      result = result.replace(hash, replacement);
-      replacedHashes.push(hash);
-    }
+const embed: Exclude<Printer<GoNode>["embed"], undefined> = (
+  path,
+  print,
+  textToDoc,
+  options
+) => {
+  const node = path.getNode();
+
+  if (!node) {
+    return null;
   }
 
-  return result;
-}
-
-let lastMissedBracket = false;
-
-function replaceBlocks(
-  input: string,
-  replacements: Map<string, string>,
-  replacedHashes = new Array<string>()
-) {
-  let result = input;
-
-  const fullOpeningTags = input.match(/<BPGT.*?EPGT>/g) ?? [];
-  const openOpeningTag = (input.match(/<BPGT.*?EPGT(?!>)/g) ?? [])[0];
-  const fullClosingTags = input.match(/<\/BPGT.*?EPGT>/g) ?? [];
-  const openClosingTag = (input.match(/<\/BPGT.*?EPGT(?!>)/g) ?? [])[0];
-
-  if (lastMissedBracket && input.match(/[\t ]*>/)) {
-    lastMissedBracket = false;
-    result = result.replace(/[\t ]*>/, "");
-  }
-
-  fullOpeningTags.forEach((openingTag) => {
-    replacedHashes.push(openingTag);
-    result = result.replace(openingTag, replacements.get(openingTag)!);
-  });
-
-  if (openOpeningTag) {
-    const fixedOpeningTag = openOpeningTag + ">";
-    lastMissedBracket = true;
-
-    replacedHashes.push(fixedOpeningTag);
-    result = result.replace(openOpeningTag, replacements.get(fixedOpeningTag)!);
-  }
-
-  fullClosingTags.forEach((fullClosingTag) => {
-    replacedHashes.push(fullClosingTag);
-    result = result.replace(fullClosingTag, replacements.get(fullClosingTag)!);
-  });
-
-  if (openClosingTag) {
-    const fixedClosingTag = openClosingTag + ">";
-    lastMissedBracket = true;
-
-    replacedHashes.push(fixedClosingTag);
-    result = result.replace(openClosingTag, replacements.get(fixedClosingTag)!);
-  }
-
-  return result;
-}
-
-function embedFn(
-  textToDoc: (text: string, options: Options) => doc.builders.Doc,
-  options: ParserOptions
-): doc.builders.Doc {
-  const text = options.originalText;
-
-  const regexp = /(?:{{.*?}})|(?:<script(?:\n|.)*?>)((?:\n|.)*?)(?:<\/script>)/gm;
-  const replacements = new Map<string, string>();
-  const blockHashes = new Array<string>();
-
-  let replacedText = text.trim();
-  let match: RegExpExecArray | null;
-  // tslint:disable-next-line: no-conditional-assignment
-  while ((match = regexp.exec(text)) != null) {
-    const result = match[0];
-
-    if (!result.includes("{{")) {
-      continue;
-    }
-
-    const cleanedResult = result
-      // clean except for hyphens, shortcodes, comments
-      .replace(/{{(?![-<]|(?:\/\*))[ \t]*/g, "{{ ")
-      .replace(/[ \t]*(?<![->]|(?:\*\/))}}/g, " }}")
-
-      // clean hyphens
-      .replace(/{{-[ \t]*/g, "{{- ")
-      .replace(/[ \t]*-}}/g, " -}}")
-
-      // clean shortcodes, e.g. "{{<    year    >}}" -> "{{< year >}}"
-      .replace(/{{<[ \t]*/g, "{{< ")
-      .replace(/[ \t]*>}}/g, " >}}")
-
-      .replace(/ *\n/g, "\n")
-      .trim();
-
-    const replacement = buildReplacement(cleanedResult, blockHashes);
-
-    replacedText = replacedText.replace(result, replacement);
-
-    const forceLinebreak = !!replacedText.match(
-      new RegExp(`^[ \t]*${replacement}[ \t]*$`, "gm")
+  if (hasPrettierIgnoreLine(node)) {
+    return options.originalText.substring(
+      options.locStart(node),
+      options.locEnd(node)
     );
-
-    if (forceLinebreak && !replacement.includes("<")) {
-      const linebreakReplacement = `<!--BPGT${replacement}EPGT-->`;
-
-      replacedText = replacedText.replace(replacement, linebreakReplacement);
-      replacements.set(linebreakReplacement, cleanedResult);
-    } else {
-      replacements.set(replacement, cleanedResult);
-    }
   }
 
-  if (blockHashes.length > 0) {
-    throw Error("Missing ending block.");
+  if (node.type !== "block" && node.type !== "root") {
+    return null;
   }
 
-  const htmlDoc = textToDoc(replacedText, {
+  const html = textToDoc(node.aliasedContent, {
+    ...options,
     parser: "html",
+    parentParser: "go-template",
   });
 
-  const replacedHashes: string[] = [];
-
-  const mappedDoc = doc.utils.mapDoc(htmlDoc, (docLeaf) => {
-    if (typeof docLeaf !== "string") {
-      return docLeaf;
+  const mapped = doc.utils.mapDoc(html, (currentDoc) => {
+    if (typeof currentDoc !== "string") {
+      return currentDoc;
     }
 
-    let result = docLeaf;
+    let result: builders.Doc = currentDoc;
 
-    result = replaceSingles(result, replacements, replacedHashes);
-
-    result = replaceBlocks(result, replacements, replacedHashes);
+    Object.keys(node.children).forEach(
+      (key) =>
+        (result = doc.utils.mapDoc(result, (docNode) =>
+          typeof docNode !== "string" || !docNode.includes(key)
+            ? docNode
+            : builders.concat([
+                docNode.substring(0, docNode.indexOf(key)),
+                path.call(print, "children", key),
+                docNode.substring(docNode.indexOf(key) + key.length),
+              ])
+        ))
+    );
 
     return result;
   });
 
-  return mappedDoc;
+  if (node.type === "root") {
+    return mapped;
+  }
+
+  if (Array.isArray(mapped)) {
+    mapped.pop();
+  }
+
+  const startStatement = path.call(print, "start");
+  const endStatement = node.end ? path.call(print, "end") : "";
+
+  if (isPrettierIgnoreBlock(node)) {
+    return builders.concat([
+      utils.removeLines(path.call(print, "start")),
+      printPlainBlock(node.content),
+      endStatement,
+    ]);
+  }
+
+  const content = node.aliasedContent.trim()
+    ? builders.indent(builders.concat([builders.softline, mapped]))
+    : "";
+
+  const result = builders.concat([
+    startStatement,
+    content,
+    builders.softline,
+    endStatement,
+  ]);
+
+  const emptyLine =
+    !!node.end && isFollowedByEmptyLine(node.end, options.originalText)
+      ? builders.softline
+      : "";
+
+  if (isMultiBlock(node.parent)) {
+    return builders.concat([result, emptyLine]);
+  }
+
+  return builders.group(builders.concat([builders.group(result), emptyLine]), {
+    shouldBreak: !!node.end && hasNodeLinebreak(node.end, options.originalText),
+  });
+};
+
+type PrintFn = (path: FastPath<GoNode>) => builders.Doc;
+
+function printMultiBlock(
+  node: GoMultiBlock,
+  path: FastPath<GoNode>,
+  print: PrintFn
+): builders.Doc {
+  return builders.concat([...path.map(print, "blocks")]);
 }
 
-export const printers = {
-  "go-template": <Printer>{
-    embed: (_, __, textToDoc, options) => {
-      try {
-        return embedFn(textToDoc, options);
-      } catch (e) {
-        // tslint:disable-next-line:no-console
-        console.error(e);
-        return options.originalText;
-      }
-    },
-  },
-};
+function printInline(
+  node: GoInline,
+  path: FastPath<GoNode>,
+  options: ExtendedParserOptions,
+  print: PrintFn
+): builders.Doc {
+  const hasLineBreak = hasNodeLinebreak(node, options.originalText);
+
+  const result: builders.Doc[] = [
+    printStatement(node.statement, options.goTemplateBracketSpacing, {
+      start: node.startDelimiter,
+      end: node.endDelimiter,
+    }),
+  ];
+
+  return builders.group(
+    builders.concat([
+      ...result,
+      isFollowedByEmptyLine(node, options.originalText)
+        ? builders.softline
+        : "",
+    ]),
+    {
+      shouldBreak: hasLineBreak && !isBlockEnd(node) && !isBlockStart(node),
+    }
+  );
+}
+
+function isBlockEnd(node: GoInline) {
+  const { parent } = getFirstBlockParent(node);
+  return isBlock(parent) && parent.end === node;
+}
+
+function isBlockStart(node: GoInline) {
+  const { parent } = getFirstBlockParent(node);
+  return isBlock(parent) && parent.start === node;
+}
+
+function printStatement(
+  statement: string,
+  addSpaces: boolean,
+  delimiter: { start: GoInlineStartDelimiter; end: GoInlineEndDelimiter } = {
+    start: "",
+    end: "",
+  }
+) {
+  const space = addSpaces ? " " : "";
+  const shouldBreak = statement.includes("\n");
+
+  const content = shouldBreak
+    ? statement
+        .trim()
+        .split("\n")
+        .map((line, _, array) =>
+          array.indexOf(line) === array.length - 1
+            ? builders.concat([line.trim(), builders.softline])
+            : builders.indent(builders.concat([line.trim(), builders.softline]))
+        )
+    : [statement.trim()];
+
+  return builders.group(
+    builders.concat([
+      "{{",
+      delimiter.start,
+      space,
+      ...content,
+      shouldBreak ? "" : space,
+      delimiter.end,
+      "}}",
+    ]),
+    { shouldBreak }
+  );
+}
+
+function hasPrettierIgnoreLine(node: GoNode) {
+  if (isRoot(node)) {
+    return false;
+  }
+
+  const { parent, child } = getFirstBlockParent(node);
+
+  const regex = new RegExp(
+    `(?:<!--|{{).*?prettier-ignore.*?(?:-->|}})\n.*${child.id}`
+  );
+
+  return !!parent.aliasedContent.match(regex);
+}
+
+function isPrettierIgnoreBlock(node: GoNode) {
+  return node.type === "block" && node.keyword === "prettier-ignore-start";
+}
+
+function hasNodeLinebreak(node: GoInline, source: string) {
+  const start = node.index + node.length;
+  const end = source.indexOf("\n", start);
+  const suffix = source.substring(start, end);
+
+  return !suffix;
+}
+
+function isFollowedByEmptyLine(node: GoInline, source: string) {
+  const start = node.index + node.length;
+  const firstLineBreak = source.indexOf("\n", start);
+  const secondLineBreak = source.indexOf("\n", firstLineBreak + 1);
+  const emptyLine = source
+    .substring(firstLineBreak + 1, secondLineBreak)
+    .trim();
+  const isLastNode = !!source.substring(start).match(/^\s*$/);
+
+  return (
+    firstLineBreak !== -1 && secondLineBreak !== -1 && !emptyLine && !isLastNode
+  );
+}
+
+function getFirstBlockParent(node: Exclude<GoNode, GoRoot>): {
+  parent: GoBlock | GoRoot;
+  child: typeof node;
+} {
+  let previous = node;
+  let current = node.parent;
+
+  while (!isBlock(current) && !isRoot(current)) {
+    previous = current;
+    current = current.parent;
+  }
+
+  return {
+    child: previous,
+    parent: current,
+  };
+}
+
+function printPlainBlock(text: string, hardlines = true): builders.Doc {
+  const isTextEmpty = (input: string) => !!input.match(/^\s*$/);
+
+  const lines = text.split("\n");
+
+  const segments = lines.filter(
+    (value, i) => !(i == 0 || i == lines.length - 1) || !isTextEmpty(value)
+  );
+
+  return builders.concat([
+    ...segments.map((content, i) =>
+      builders.concat([
+        hardlines || i ? builders.hardline : "",
+        builders.trim,
+        content,
+      ])
+    ),
+    hardlines ? builders.hardline : "",
+  ]);
+}

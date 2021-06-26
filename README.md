@@ -15,16 +15,16 @@ The following file types are detected automatically:
 
 To use it with GoHugo and basic `.html` files, you'll have to override the used parser inside your `.prettierrc` file:
 
-```json
+```js
 {
-  "overrides": [
+  overrides: [
     {
-      "files": ["*.html"],
-      "options": {
-        "parser": "go-template"
-      }
-    }
-  ]
+      files: ["*.html"],
+      options: {
+        parser: "go-template",
+      },
+    },
+  ],
 }
 ```
 
@@ -37,6 +37,20 @@ Make sure to always have installed **both** dependencies:
 
 Also make sure that they are installed inside the same scope.
 Install both globally (`npm i -g`) or locally – otherwise prettier may not pick up the plugin.
+
+## Additional Options
+
+```js
+// .prettierrc
+{
+  /**
+   * Enables & disables spacing between go statements.
+   * E.g. {{ statement }} vs {{statement}}.
+   * Default: true
+   */
+  "goTemplateBracketSpacing": true
+}
+```
 
 ## Changelog
 

@@ -1,0 +1,9 @@
+<div {{< this is inline >}}>
+  {{ define whatever }}
+    <span>
+      {{ if inner }}
+        <img verylongattributethatintroducesabreak src="{{< .content >}}" />
+      {{ end }}
+    </span>
+  {{ end }}
+</div>
