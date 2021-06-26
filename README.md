@@ -52,6 +52,34 @@ Install both globally (`npm i -g`) or locally – otherwise prettier may not pic
 }
 ```
 
+## Ignoring Code
+
+#### Single Block
+
+```html
+<div>
+  <!-- prettier-ignore -->
+  {{if }}
+  {{end }}
+</div>
+```
+
+#### Multiline
+
+```html
+<html>
+  {{/* prettier-ignore-start */}}
+  <script>
+    {{if }}
+    Whatever.
+    {{else }}
+    Psych.
+    {{end }}
+  </script>
+  {{/* prettier-ignore-end */}}
+</html>
+```
+
 ## Changelog
 
 ### v0.0.11
