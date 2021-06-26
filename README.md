@@ -54,6 +54,16 @@ Install both globally (`npm i -g`) or locally – otherwise prettier may not pic
 
 ## Changelog
 
+### v0.0.11
+
+- AST rewrite
+- Fix inline actions
+- If / Else / Else-If support
+- Ignore formatting for blocks with `{{/* prettier-ignore */}}
+- Ignore large code sections with `{{/* prettier-ignore-start */}}...{{/* prettier-ignore-end */}}
+- Tweak general formatting
+- Support for multiline actions
+
 ### v0.0.10
 
 - Resolve bug #19: Fix template comments.
