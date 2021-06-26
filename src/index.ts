@@ -276,7 +276,8 @@ function printStatement(
       shouldBreak ? "" : space,
       delimiter.end,
       "}}",
-    ])
+    ]),
+    { shouldBreak }
   );
 }
 
