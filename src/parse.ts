@@ -7,7 +7,7 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
   options
 ) => {
   const regex =
-    /{{(?<startdelimiter>-|<|%|\/\*)?\s*(?<statement>(?<keyword>if|range|block|with|define|end|else|prettier-ignore-start|prettier-ignore-end)?[\s\S]*?)\s*(?<endDelimiter>-|>|%|\*\/)?}}/g;
+    /{{(?<startdelimiter>-|<|%|\/\*)?\s*(?<statement>(?<keyword>if|range|block|with|define|end|else|prettier-ignore-start|prettier-ignore-end)?[\s\S]*?)\s*(?<endDelimiter>-|>|%|\*\/)?}}|(?<unformattable>\s*<(script|style)[\s\S]*{{[\s\S]*(script|style)>)/g;
   const blocks: {
     start: RegExpMatchArray;
     end: RegExpMatchArray;
@@ -29,6 +29,7 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
     const current = last(nodeStack);
     const keyword = match.groups?.keyword as GoBlockKeyword | undefined;
     const statement = match.groups?.statement;
+    const unformattable = match.groups?.unformattable;
     const startDelimiter = (match.groups?.startdelimiter ??
       "") as GoInlineStartDelimiter;
     const endDelimiter = (match.groups?.endDelimiter ??
@@ -41,9 +42,21 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
     if (match.index === undefined) {
       throw Error("Regex match index undefined.");
     }
+    const id = getId();
+    if (unformattable) {
+      current.children[id] = {
+        id,
+        type: "unformattable",
+        index: match.index,
+        length: match[0].length,
+        content: unformattable,
+        parent: current,
+      };
+      continue;
+    }
 
     if (statement === undefined) {
-      throw Error("Match without statement.");
+      throw Error("Formattable match without statement.");
     }
 
     const inline: GoInline = {
@@ -54,7 +67,7 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
       parent: current!,
       type: "inline",
       statement,
-      id: getId(),
+      id,
     };
 
     if (keyword === "end" || keyword === "prettier-ignore-end") {
@@ -178,7 +191,12 @@ function last<T>(array: T[]): T | undefined {
   return array[array.length - 1];
 }
 
-export type GoNode = GoRoot | GoBlock | GoInline | GoMultiBlock;
+export type GoNode =
+  | GoRoot
+  | GoBlock
+  | GoInline
+  | GoMultiBlock
+  | GoUnformattable;
 
 export type GoBlockKeyword =
   | "if"
@@ -204,15 +222,15 @@ export type GoRoot = { type: "root" } & Omit<
   | "end"
 >;
 
-export interface GoBaseNode {
+export interface GoBaseNode<Type extends string> {
   id: string;
+  type: Type;
   index: number;
   length: number;
   parent: GoBlock | GoRoot | GoMultiBlock;
 }
 
-export interface GoBlock extends GoBaseNode, WithDelimiter {
-  type: "block";
+export interface GoBlock extends GoBaseNode<"block">, WithDelimiter {
   keyword: GoBlockKeyword;
   children: {
     [id: string]: GoNode;
@@ -224,8 +242,7 @@ export interface GoBlock extends GoBaseNode, WithDelimiter {
   contentStart: number;
 }
 
-export interface GoMultiBlock extends GoBaseNode {
-  type: "double-block";
+export interface GoMultiBlock extends GoBaseNode<"double-block"> {
   blocks: (GoBlock | GoMultiBlock)[];
   keyword: GoBlockKeyword;
 }
@@ -234,13 +251,16 @@ export type GoSharedDelimiter = "%" | "-" | "";
 export type GoInlineStartDelimiter = "<" | "/*" | GoSharedDelimiter;
 export type GoInlineEndDelimiter = ">" | "*/" | GoSharedDelimiter;
 
+export interface GoUnformattable extends GoBaseNode<"unformattable"> {
+  content: string;
+}
+
 export interface WithDelimiter {
   startDelimiter: GoInlineStartDelimiter;
   endDelimiter: GoInlineEndDelimiter;
 }
 
-export interface GoInline extends GoBaseNode, WithDelimiter {
-  type: "inline";
+export interface GoInline extends GoBaseNode<"inline">, WithDelimiter {
   statement: string;
 }
 
@@ -258,4 +278,8 @@ export function isMultiBlock(node: GoNode): node is GoMultiBlock {
 
 export function isRoot(node: GoNode): node is GoRoot {
   return node.type === "root";
+}
+
+export function isUnformattable(node: GoNode): node is GoRoot {
+  return node.type === "unformattable";
 }

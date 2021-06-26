@@ -81,6 +81,8 @@ export const printers = {
           return printInline(node, path, options, print);
         case "double-block":
           return printMultiBlock(node, path, print);
+        case "unformattable":
+          return printPlainBlock(node.content, false);
       }
 
       console.error(
@@ -339,7 +341,7 @@ function getFirstBlockParent(node: Exclude<GoNode, GoRoot>): {
   };
 }
 
-function printPlainBlock(text: string): builders.Doc {
+function printPlainBlock(text: string, hardlines = true): builders.Doc {
   const isTextEmpty = (input: string) => !!input.match(/^\s*$/);
 
   const lines = text.split("\n");
@@ -349,9 +351,13 @@ function printPlainBlock(text: string): builders.Doc {
   );
 
   return builders.concat([
-    ...segments.map((content) =>
-      builders.concat([builders.hardline, builders.trim, content])
+    ...segments.map((content, i) =>
+      builders.concat([
+        hardlines || i ? builders.hardline : "",
+        builders.trim,
+        content,
+      ])
     ),
-    builders.hardline,
+    hardlines ? builders.hardline : "",
   ]);
 }
