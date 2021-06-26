@@ -155,7 +155,7 @@ const embed: Exclude<Printer<GoNode>["embed"], undefined> = (
     return result;
   });
 
-  if (node.type === "root") {
+  if (isRoot(node)) {
     return mapped;
   }
 
@@ -298,7 +298,7 @@ function hasPrettierIgnoreLine(node: GoNode) {
 }
 
 function isPrettierIgnoreBlock(node: GoNode) {
-  return node.type === "block" && node.keyword === "prettier-ignore-start";
+  return isBlock(node) && node.keyword === "prettier-ignore-start";
 }
 
 function hasNodeLinebreak(node: GoInline, source: string) {

@@ -26,7 +26,7 @@
   "scripts": {
     "lint": "tslint --project .",
     "test": "jest",
-    "coverage": "jest --coverage",
+    "coverage": "jest --coverage --no-cache",
     "publish:coverage": "codecov -t $npm_config_prettier_plugin_go_html_codecov",
     "release:coverage": "npm run coverage && npm run publish:coverage",
     "build": "tsc --pretty",
