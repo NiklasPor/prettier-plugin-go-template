@@ -32,9 +32,8 @@
     "build": "tsc --pretty",
     "watch": "npm run build -- --watch",
     "watch:test": "jest --watch",
-    "release:plugin": "npm run build && npm publish",
-    "release:plugin:beta": "npm run build && npm run release:coverage && npm publish --tag beta",
-    "release": "npm run release:coverage && npm run release:plugin"
+    "release:plugin": "npm run build && npm run release:coverage && npm publish",
+    "release:plugin:beta": "npm run build && npm run release:coverage && npm publish --tag beta"
   },
   "peerDependencies": {
     "prettier": "^2.0.0"
