@@ -7,7 +7,7 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
   options
 ) => {
   const regex =
-    /{{(?<startdelimiter>-|<|%|\/\*)?\s*(?<statement>(?<keyword>if|range|block|with|define|end|else|prettier-ignore-start|prettier-ignore-end)?[\s\S]*?)\s*(?<endDelimiter>-|>|%|\*\/)?}}|(?<unformattable>\s*<(script|style)[\s\S]*{{[\s\S]*(script|style)>)/g;
+    /{{(?<startdelimiter>-|<|%|\/\*)?\s*(?<statement>(?<keyword>if|range|block|with|define|end|else|prettier-ignore-start|prettier-ignore-end)?[\s\S]*?)\s*(?<endDelimiter>-|>|%|\*\/)?}}|(?<unformattableScript>\s*<(script)[\s\S]*?{{[\s\S]*?(script)>)|(?<unformattableStyle>\s*<(style)[\s\S]*?{{[\s\S]*?(style)>)/g;
   const blocks: {
     start: RegExpMatchArray;
     end: RegExpMatchArray;
@@ -29,7 +29,9 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
     const current = last(nodeStack);
     const keyword = match.groups?.keyword as GoBlockKeyword | undefined;
     const statement = match.groups?.statement;
-    const unformattable = match.groups?.unformattable;
+    const unformattable =
+      match.groups?.unformattableScript ?? match.groups?.unformattableStyle;
+
     const startDelimiter = (match.groups?.startdelimiter ??
       "") as GoInlineStartDelimiter;
     const endDelimiter = (match.groups?.endDelimiter ??
