@@ -74,7 +74,7 @@ export const parseGoTemplate: Parser<GoNode>["parse"] = (
 
     if (keyword === "end" || keyword === "prettier-ignore-end") {
       if (current.type !== "block") {
-        throw Error("Encountered unexpted end keyword.");
+        throw Error("Encountered unexpected end keyword.");
       }
 
       current.length = match[0].length + match.index - current.index;
