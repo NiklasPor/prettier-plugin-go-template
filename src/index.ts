@@ -63,9 +63,10 @@ export const languages: SupportLanguage[] = [
 ];
 export const parsers = {
   [PLUGIN_KEY]: <Parser<GoNode>>{
-    ...htmlParser,
     astFormat: PLUGIN_KEY,
-    preprocess: (text) => text,
+    preprocess: (text) =>
+      // Cut away trailing newline to normalize formatting.
+      text.endsWith("\n") ? text.slice(0, text.length - 1) : text,
     parse: parseGoTemplate,
     locStart: (node) => node.index,
     locEnd: (node) => node.index + node.length,
@@ -156,7 +157,8 @@ const embed: Exclude<Printer<GoNode>["embed"], undefined> = (
   });
 
   if (isRoot(node)) {
-    return mapped;
+    const result = utils.stripTrailingHardline(mapped);
+    return builders.concat([result, builders.hardline]);
   }
 
   if (Array.isArray(mapped)) {

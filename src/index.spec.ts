@@ -41,6 +41,7 @@ tests.forEach((test) =>
     } else {
       const result = format();
       expect(result).toEqual(expected);
+      // Check that a second prettifying is not changing the result again.
       expect(prettify(result, configObject)).toEqual(expected);
     }
   })
