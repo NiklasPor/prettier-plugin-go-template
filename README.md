@@ -126,6 +126,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <td align="center"><a href="https://silverwind.io"><img src="https://avatars1.githubusercontent.com/u/115237?v=4?s=100" width="100px;" alt=""/><br /><sub><b>silverwind</b></sub></a><br /><a href="#ideas-silverwind" title="Ideas, Planning, & Feedback">🤔</a></td>
     <td align="center"><a href="https://codeberg.org/cpence"><img src="https://avatars0.githubusercontent.com/u/297075?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Charles Pence</b></sub></a><br /><a href="https://github.com/NiklasPor/prettier-plugin-go-template/issues?q=author%3Acpence" title="Bug reports">🐛</a></td>
   </tr>
+  <tr>
+    <td align="center"><a href="http://jasik.xyz"><img src="https://avatars.githubusercontent.com/u/10626596?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Caleb Jasik</b></sub></a><br /><a href="https://github.com/NiklasPor/prettier-plugin-go-template/issues?q=author%3Ajasikpark" title="Bug reports">🐛</a> <a href="https://github.com/NiklasPor/prettier-plugin-go-template/commits?author=jasikpark" title="Documentation">📖</a> <a href="#example-jasikpark" title="Examples">💡</a> <a href="#ideas-jasikpark" title="Ideas, Planning, & Feedback">🤔</a> <a href="#maintenance-jasikpark" title="Maintenance">🚧</a> <a href="#question-jasikpark" title="Answering Questions">💬</a></td>
+  </tr>
 </table>
 
 <!-- markdownlint-restore -->
