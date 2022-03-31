@@ -70,6 +70,20 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "jasikpark",
+      "name": "Caleb Jasik",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10626596?v=4",
+      "profile": "http://jasik.xyz",
+      "contributions": [
+        "bug",
+        "doc",
+        "example",
+        "ideas",
+        "maintenance",
+        "question"
+      ]
     }
   ],
   "badgeTemplate": "",
