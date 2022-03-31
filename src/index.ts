@@ -130,36 +130,33 @@ const embed: Exclude<Printer<GoNode>["embed"], undefined> = (
     parentParser: "go-template",
   });
 
-  const mapped = doc.utils.mapDoc(html, (currentDoc) => {
-    if (typeof currentDoc !== "string") {
-      return currentDoc;
-    }
+  const mapped = utils.stripTrailingHardline(
+    utils.mapDoc(html, (currentDoc) => {
+      if (typeof currentDoc !== "string") {
+        return currentDoc;
+      }
 
-    let result: builders.Doc = currentDoc;
+      let result: builders.Doc = currentDoc;
 
-    Object.keys(node.children).forEach(
-      (key) =>
-        (result = doc.utils.mapDoc(result, (docNode) =>
-          typeof docNode !== "string" || !docNode.includes(key)
-            ? docNode
-            : builders.concat([
-                docNode.substring(0, docNode.indexOf(key)),
-                path.call(print, "children", key),
-                docNode.substring(docNode.indexOf(key) + key.length),
-              ])
-        ))
-    );
+      Object.keys(node.children).forEach(
+        (key) =>
+          (result = doc.utils.mapDoc(result, (docNode) =>
+            typeof docNode !== "string" || !docNode.includes(key)
+              ? docNode
+              : builders.concat([
+                  docNode.substring(0, docNode.indexOf(key)),
+                  path.call(print, "children", key),
+                  docNode.substring(docNode.indexOf(key) + key.length),
+                ])
+          ))
+      );
 
-    return result;
-  });
+      return result;
+    })
+  );
 
   if (isRoot(node)) {
-    const result = utils.stripTrailingHardline(mapped);
-    return builders.concat([result, builders.hardline]);
-  }
-
-  if (Array.isArray(mapped)) {
-    mapped.pop();
+    return builders.concat([mapped, builders.hardline]);
   }
 
   const startStatement = path.call(print, "start");
@@ -208,13 +205,34 @@ function printMultiBlock(
   return builders.concat([...path.map(print, "blocks")]);
 }
 
+function isFollowedByNode(node: GoInline): boolean {
+  const parent = getFirstBlockParent(node).parent;
+  const start = parent.aliasedContent.indexOf(node.id) + node.id.length;
+
+  let nextNodeIndex = -1;
+  Object.keys(parent.children).forEach((key) => {
+    const index = parent.aliasedContent.indexOf(key, start);
+    if (nextNodeIndex == -1 || index < nextNodeIndex) {
+      nextNodeIndex = index;
+    }
+  });
+
+  return !!parent.aliasedContent
+    .substring(start, nextNodeIndex)
+    .match(/^\s+$/m);
+}
+
 function printInline(
   node: GoInline,
   path: FastPath<GoNode>,
   options: ExtendedParserOptions,
   print: PrintFn
 ): builders.Doc {
-  const hasLineBreak = hasNodeLinebreak(node, options.originalText);
+  const isBlockNode = isBlockEnd(node) || isBlockStart(node);
+  const emptyLine =
+    isFollowedByEmptyLine(node, options.originalText) && isFollowedByNode(node)
+      ? builders.softline
+      : "";
 
   const result: builders.Doc[] = [
     printStatement(node.statement, options.goTemplateBracketSpacing, {
@@ -223,17 +241,9 @@ function printInline(
     }),
   ];
 
-  return builders.group(
-    builders.concat([
-      ...result,
-      isFollowedByEmptyLine(node, options.originalText)
-        ? builders.softline
-        : "",
-    ]),
-    {
-      shouldBreak: hasLineBreak && !isBlockEnd(node) && !isBlockStart(node),
-    }
-  );
+  return builders.group(builders.concat([...result, emptyLine]), {
+    shouldBreak: hasNodeLinebreak(node, options.originalText) && !isBlockNode,
+  });
 }
 
 function isBlockEnd(node: GoInline) {
