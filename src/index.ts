@@ -86,20 +86,17 @@ export const printers = {
           return printPlainBlock(node.content, false);
       }
 
-      console.error(
-        `An error occured during printing. Found invalid node ${node?.type}`
+      throw new Error(
+        `An error occured during printing. Found invalid node ${node?.type}.`
       );
-
-      return options.originalText;
     },
     embed: (path, print, textToDoc, options) => {
       try {
         return embed(path, print, textToDoc, options);
       } catch (e) {
         console.error("Formatting failed.", e);
+        throw e;
       }
-
-      return options.originalText;
     },
   },
 };

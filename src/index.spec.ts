@@ -27,16 +27,13 @@ tests.forEach((test) =>
       existsSync(configPath) && readFileSync(configPath)?.toString();
     const configObject = configString ? JSON.parse(configString) : {};
 
-    if (test.startsWith("invalid")) {
-      jest.spyOn(console, "error").mockImplementation(() => {});
-    }
-
     const format = () => prettify(input, configObject);
 
     const expectedError = expected.match(/Error\("(?<message>.*)"\)/)?.groups
       ?.message;
 
     if (expectedError) {
+      jest.spyOn(console, "error").mockImplementation(() => {});
       expect(format).toThrow(expectedError);
     } else {
       const result = format();
