@@ -84,6 +84,15 @@
         "maintenance",
         "question"
       ]
+    },
+    {
+      "login": "LandGod",
+      "name": "Dan Gold",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8890238?v=4",
+      "profile": "http://DanGold.me",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "badgeTemplate": "",
