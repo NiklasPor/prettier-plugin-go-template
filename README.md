@@ -133,6 +133,12 @@ Install both globally (`npm i -g`) or locally – otherwise prettier may not pic
 
 ## Changelog
 
+### v0.0.12
+
+- Fix several formatting issues
+- Improve unformattable script & style detection
+- Huge thanks to @jasikpark for validating & cleaning up the issues 🎉
+
 ### v0.0.11
 
 - AST rewrite
