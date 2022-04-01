@@ -5,23 +5,34 @@
   import pluginCSS from "prettier/parser-postcss";
   import * as pluginGoTemplate from "prettier-plugin-go-template";
 
-  let input = "";
-  let output = "";
+  let input = `{{ if or .Prev .Next -}}
+{{ $p := where site.Pages }}
+<div class="my-navigation">
+{{ with $p.Next . -}}
+<a href="{{ .RelPermalink }}">
+<div class="row">
+<div class="cell py-2">
+  {{ .Title }} 
+</div> </div> </a>
+{{ end -}}
+</div>
+{{ end -}}`;
+  $: output = getFormattedInput(input);
 
-  function onInput(event) {
+  function getFormattedInput(text: string): string {
     try {
-      output = prettier.format(event.target.value, {
+      return prettier.format(text, {
         parser: "go-template",
         plugins: [pluginHtml, pluginBabel, pluginCSS, pluginGoTemplate],
       });
     } catch (e) {
-      output = e.toString();
+      return e.toString();
     }
   }
 </script>
 
 <main>
-  <textarea bind:value={input} on:input={onInput} />
+  <textarea bind:value={input} />
   <div class="divider" />
   <textarea bind:value={output} class="output-only" disabled />
 </main>
