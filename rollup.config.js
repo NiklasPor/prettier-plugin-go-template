@@ -37,7 +37,7 @@ function serve() {
 export default {
   input: "./website/src/main.ts",
   output: {
-    sourcemap: true,
+    sourcemap: !production,
     format: "iife",
     name: "app",
     file: "./website/public/build/bundle.js",
@@ -67,6 +67,7 @@ export default {
     typescript({
       sourceMap: !production,
       inlineSources: !production,
+      tsconfig: "./website/tsconfig.json",
     }),
 
     // In dev mode, call `npm run start` once
