@@ -2,7 +2,7 @@
 
 [![NPM Badge](https://img.shields.io/npm/v/prettier-plugin-go-template)](https://www.npmjs.com/package/prettier-plugin-go-template) [![CodeCov Badge](https://img.shields.io/codecov/c/github/niklaspor/prettier-plugin-go-template)](https://codecov.io/gh/NiklasPor/prettier-plugin-go-template) [![Contributions Badge](https://img.shields.io/github/all-contributors/niklaspor/prettier-plugin-go-template)](#contributors-)
 
-Fixes formatting for go template files. The only peer dependency is [prettier](https://www.npmjs.com/package/prettier).
+Formatter plugin for go template files. The only peer dependency is [prettier](https://www.npmjs.com/package/prettier). Test you own code on the [**playground**](https://prettier-plugin-go-template.vercel.app/).
 
 ```bash
 npm install --save-dev prettier prettier-plugin-go-template
@@ -10,6 +10,55 @@ npm install --save-dev prettier prettier-plugin-go-template
 
 The following file types are detected automatically:
 `.gohtml`, `.gotmpl`, `.go.tmpl`, `.tmpl`, `.tpl`, `.html.tmpl`
+
+<table>
+<tr>
+<th>Input</th>
+<th>Output</th>
+</tr>
+<tr>
+<td>
+
+<!-- prettier-ignore-start -->
+```html
+{{ if or .Prev .Next -}}
+{{ $p := where site.Pages }}
+<div class="my-navigation">
+{{ with $p.Next . -}}
+<a href="{{ .RelPermalink }}">
+<div class="row">
+<div class="cell py-2">
+  {{ .Title }} 
+</div> </div> </a>
+{{ end -}}
+</div>
+{{ end -}}
+```
+<!-- prettier-ignore-end -->
+
+</td>
+<td>
+
+<!-- prettier-ignore-start -->
+```html
+{{ if or .Prev .Next -}}
+  {{ $p := where site.Pages }}
+  <div class="my-navigation">
+    {{ with $p.Next . -}}
+      <a href="{{ .RelPermalink }}">
+        <div class="row">
+          <div class="cell py-2">{{ .Title }}</div>
+        </div>
+      </a>
+    {{ end -}}
+  </div>
+{{ end -}}
+```
+<!-- prettier-ignore-end -->
+
+</td>
+</tr>
+</table>
 
 ## GoHugo / `.html`
 
@@ -32,11 +81,13 @@ To use it with GoHugo and basic `.html` files, you'll have to override the used 
 
 Make sure to always have installed **both** dependencies:
 
-- prettier
-- prettier-plugin-go-template
+- `prettier`
+- `prettier-plugin-go-template`
 
 Also make sure that they are installed inside the same scope.
 Install both globally (`npm i -g`) or locally – otherwise prettier may not pick up the plugin.
+
+> Note: The global setup additional requires setting your VSCode prettier path to your global prettier path. You can read in [this issue](https://github.com/NiklasPor/prettier-plugin-go-template/issues/58#issuecomment-1085060511) how to set it up – should be doable in less than a minute if you have npm & VSCode already running.
 
 ## Additional Options
 
