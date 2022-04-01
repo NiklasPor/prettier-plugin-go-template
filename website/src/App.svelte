@@ -3,7 +3,7 @@
   import pluginHtml from "prettier/parser-html";
   import pluginBabel from "prettier/parser-babel";
   import pluginCSS from "prettier/parser-postcss";
-  import pluginGoTemplate from "../../lib/index";
+  import * as pluginGoTemplate from "prettier-plugin-go-template";
 
   let input = "";
   let output = "";

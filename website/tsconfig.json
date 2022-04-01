@@ -2,7 +2,10 @@
   "extends": "@tsconfig/svelte/tsconfig.json",
   "compilerOptions": {
     "target": "ES2020",
-    "importsNotUsedAsValues": "remove"
+    "importsNotUsedAsValues": "remove",
+    "paths": {
+      "prettier-plugin-go-template": ["../src/index.ts"]
+    }
   },
   "include": ["src/**/*", "../src/**/*"],
   "exclude": ["node_modules/*", "__sapper__/*", "public/*"]
