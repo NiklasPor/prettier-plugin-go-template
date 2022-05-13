@@ -2,7 +2,7 @@
 
 [![NPM Badge](https://img.shields.io/npm/v/prettier-plugin-go-template)](https://www.npmjs.com/package/prettier-plugin-go-template) [![CodeCov Badge](https://img.shields.io/codecov/c/github/niklaspor/prettier-plugin-go-template)](https://codecov.io/gh/NiklasPor/prettier-plugin-go-template) [![Contributions Badge](https://img.shields.io/github/all-contributors/niklaspor/prettier-plugin-go-template)](#contributors-)
 
-Formatter plugin for go template files. The only peer dependency is [prettier](https://www.npmjs.com/package/prettier).
+Formatter plugin for go template files. The only peer dependency is [prettier](https://www.npmjs.com/package/prettier). Test you own code on the [**playground**](https://prettier-plugin-go-template-niklaspor.vercel.app/).
 
 ```bash
 npm install --save-dev prettier prettier-plugin-go-template
