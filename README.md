@@ -190,6 +190,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
   <tr>
     <td align="center"><a href="http://jasik.xyz"><img src="https://avatars.githubusercontent.com/u/10626596?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Caleb Jasik</b></sub></a><br /><a href="https://github.com/NiklasPor/prettier-plugin-go-template/issues?q=author%3Ajasikpark" title="Bug reports">🐛</a> <a href="https://github.com/NiklasPor/prettier-plugin-go-template/commits?author=jasikpark" title="Documentation">📖</a> <a href="#example-jasikpark" title="Examples">💡</a> <a href="#ideas-jasikpark" title="Ideas, Planning, & Feedback">🤔</a> <a href="#maintenance-jasikpark" title="Maintenance">🚧</a> <a href="#question-jasikpark" title="Answering Questions">💬</a></td>
     <td align="center"><a href="http://DanGold.me"><img src="https://avatars.githubusercontent.com/u/8890238?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Dan Gold</b></sub></a><br /><a href="https://github.com/NiklasPor/prettier-plugin-go-template/issues?q=author%3ALandGod" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="https://mtlynch.io"><img src="https://avatars.githubusercontent.com/u/7783288?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Michael Lynch</b></sub></a><br /><a href="https://github.com/NiklasPor/prettier-plugin-go-template/issues?q=author%3Amtlynch" title="Bug reports">🐛</a></td>
   </tr>
 </table>
 
