@@ -93,6 +93,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "mtlynch",
+      "name": "Michael Lynch",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7783288?v=4",
+      "profile": "https://mtlynch.io",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "badgeTemplate": "",
