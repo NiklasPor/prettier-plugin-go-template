@@ -133,6 +133,10 @@ Install both globally (`npm i -g`) or locally – otherwise prettier may not pic
 
 ## Changelog
 
+### v0.0.13
+
+- Fix formatting issue #84
+
 ### v0.0.12
 
 - Fix several formatting issues
