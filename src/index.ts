@@ -16,6 +16,7 @@ import {
   GoMultiBlock,
   GoNode,
   GoRoot,
+  GoUnformattable,
   isBlock,
   isMultiBlock,
   isRoot,
@@ -83,7 +84,7 @@ export const printers = {
         case "double-block":
           return printMultiBlock(node, path, print);
         case "unformattable":
-          return printPlainBlock(node.content, false);
+          return printUnformattable(node, options);
       }
 
       throw new Error(
@@ -348,6 +349,18 @@ function getFirstBlockParent(node: Exclude<GoNode, GoRoot>): {
     child: previous,
     parent: current,
   };
+}
+
+function printUnformattable(
+  node: GoUnformattable,
+  options: ExtendedParserOptions
+) {
+  const start = options.originalText.lastIndexOf("\n", node.index - 1);
+  const line = options.originalText.substring(start, node.index + node.length);
+  const lineWithoutAdditionalContent =
+    line.replace(node.content, "").match(/\s*$/)?.[0] ?? "";
+
+  return printPlainBlock(lineWithoutAdditionalContent + node.content, false);
 }
 
 function printPlainBlock(text: string, hardlines = true): builders.Doc {

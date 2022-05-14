@@ -1,0 +1,11 @@
+<template id="template">
+  <script nonce="{{ .Nonce }}">
+    document.getElementById("demo").innerText = "clicked!";
+  </script>
+  <style nonce="{{ .Nonce }}">
+    #demo {
+      font-size: 1.5rem;
+    }
+  </style>
+  <button id="demo">Click me</button>
+</template>
