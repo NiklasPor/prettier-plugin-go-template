@@ -8,6 +8,8 @@ Formatter plugin for go template files. The only peer dependency is [prettier](h
 npm install --save-dev prettier prettier-plugin-go-template
 ```
 
+or see [here](#vscode) if you want to use this with vscode
+
 The following file types are detected automatically:
 `.gohtml`, `.gotmpl`, `.go.tmpl`, `.tmpl`, `.tpl`, `.html.tmpl`
 
@@ -64,30 +66,32 @@ The following file types are detected automatically:
 
 To use it with GoHugo and basic `.html` files, you'll have to override the used parser inside your `.prettierrc` file:
 
-```js
+```json
 {
-  overrides: [
+  "overrides": [
     {
-      files: ["*.html"],
-      options: {
-        parser: "go-template",
-      },
-    },
-  ],
+      "files": ["*.html"],
+      "options": {
+        "parser": "go-template"
+      }
+    }
+  ]
 }
+
 ```
 
 ## VSCode
 
-Make sure to always have installed **both** dependencies:
+Steps:
 
-- `prettier`
-- `prettier-plugin-go-template`
+0. Have node & npm installed
+1. Run `npm i -g prettier prettier-plugin-go-template`
+2. Find where your node modules are by running `npm root -g` ➡️ `/Users/niklaspor/.nvm/versions/node/v16.13.2/lib/node_modules`
+3. Configure your VSCode settings to use your global prettier: `"prettier.prettierPath": "/Users/niklaspor/.nvm/versions/node/v16.13.2/lib/node_modules/prettier"`
+4. Copy [this code block](#gohugo--html) to your css config
+5. Set prettier as your default formatter for html or select format the document with prettier to use the plugin
 
-Also make sure that they are installed inside the same scope.
-Install both globally (`npm i -g`) or locally – otherwise prettier may not pick up the plugin.
-
-> Note: The global setup additional requires setting your VSCode prettier path to your global prettier path. You can read in [this issue](https://github.com/NiklasPor/prettier-plugin-go-template/issues/58#issuecomment-1085060511) how to set it up – should be doable in less than a minute if you have npm & VSCode already running.
+> Note: The global setup additional requires setting your VSCode prettier path to your global prettier path. You can read more in [this issue](https://github.com/NiklasPor/prettier-plugin-go-template/issues/58#issuecomment-1085060511) about how to set it up.
 
 ## Additional Options
 
