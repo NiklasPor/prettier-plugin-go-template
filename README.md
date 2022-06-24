@@ -8,7 +8,7 @@ Formatter plugin for go template files. The only peer dependency is [prettier](h
 npm install --save-dev prettier prettier-plugin-go-template
 ```
 
-or see [here](#vscode) if you want to use this with vscode
+or see [VSCode](#vscode) if you want to use this with vscode
 
 The following file types are detected automatically:
 `.gohtml`, `.gotmpl`, `.go.tmpl`, `.tmpl`, `.tpl`, `.html.tmpl`
