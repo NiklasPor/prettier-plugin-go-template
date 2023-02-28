@@ -8,6 +8,15 @@ Formatter plugin for go template files. The only peer dependency is [prettier](h
 npm install --save-dev prettier prettier-plugin-go-template
 ```
 
+Once installed, the plugin should be automatically loaded if you have them installed in the same node_modules directory where prettier is located. However, when using a package manager like pnpm, you need to add the plugin to your `.prettierrc` file explicitly.
+
+```js
+// .prettierrc
+{
+  "plugins": ["prettier-plugin-go-template"]
+}
+```
+
 The following file types are detected automatically:
 `.gohtml`, `.gotmpl`, `.go.tmpl`, `.tmpl`, `.tpl`, `.html.tmpl`
 
