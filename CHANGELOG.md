@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.15
+
+- Readme update for easier setup on npm.
+
 ## 0.0.14
 
 - **Breaking Change**: Prettier support now starts at `3.0.0`. For older Prettier versions use `prettier-plugin-go-template@0.0.13` and below.
