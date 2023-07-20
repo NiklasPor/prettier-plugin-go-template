@@ -13,7 +13,7 @@ Starting with Prettier 3 auto-discovery has been removed. Configuration is requi
 ```json
 // .prettierrc
 {
-  "plugins": ["prettier-plugin-organize-attributes"]
+  "plugins": ["prettier-plugin-go-template"]
 }
 ```
 
