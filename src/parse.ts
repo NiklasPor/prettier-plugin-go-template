@@ -1,11 +1,7 @@
 import { Parser } from "prettier";
 import { createIdGenerator } from "./create-id-generator";
 
-export const parseGoTemplate: Parser<GoNode>["parse"] = (
-  text,
-  parsers,
-  options
-) => {
+export const parseGoTemplate: Parser<GoNode>["parse"] = (text, options) => {
   const regex =
     /{{(?<startdelimiter>-|<|%|\/\*)?\s*(?<statement>(?<keyword>if|range|block|with|define|end|else|prettier-ignore-start|prettier-ignore-end)?[\s\S]*?)\s*(?<endDelimiter>-|>|%|\*\/)?}}|(?<unformattableScript><(script)((?!<)[\s\S])*>((?!<\/script)[\s\S])*?{{[\s\S]*?<\/(script)>)|(?<unformattableStyle><(style)((?!<)[\s\S])*>((?!<\/style)[\s\S])*?{{[\s\S]*?<\/(style)>)/g;
   const root: GoRoot = {
@@ -178,7 +174,7 @@ function aliasNodeContent(current: GoBlock | GoRoot): string {
         (result =
           result.substring(0, node.index - current.contentStart) +
           id +
-          result.substring(node.index + node.length - current.contentStart))
+          result.substring(node.index + node.length - current.contentStart)),
     );
 
   return result;

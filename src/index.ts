@@ -88,12 +88,12 @@ export const printers = {
       }
 
       throw new Error(
-        `An error occured during printing. Found invalid node ${node?.type}.`
+        `An error occured during printing. Found invalid node ${node?.type}.`,
       );
     },
-    embed: (path, print, textToDoc, options) => {
+    embed: (path, options) => {
       try {
-        return embed(path, print, textToDoc, options);
+        return embed(path, options);
       } catch (e) {
         console.error("Formatting failed.", e);
         throw e;
@@ -102,98 +102,93 @@ export const printers = {
   },
 };
 
-const embed: Exclude<Printer<GoNode>["embed"], undefined> = (
-  path,
-  print,
-  textToDoc,
-  options
-) => {
-  const node = path.getNode();
+const embed: Exclude<Printer<GoNode>["embed"], undefined> = () => {
+  return async (textToDoc, print, path, optionsA) => {
+    const node = path.getNode();
 
-  if (!node) {
-    return null;
-  }
+    const options = optionsA as ParserOptions;
 
-  if (hasPrettierIgnoreLine(node)) {
-    return options.originalText.substring(
-      options.locStart(node),
-      options.locEnd(node)
-    );
-  }
+    if (!node) {
+      return undefined;
+    }
 
-  if (node.type !== "block" && node.type !== "root") {
-    return null;
-  }
-
-  const html = textToDoc(node.aliasedContent, {
-    ...options,
-    parser: "html",
-    parentParser: "go-template",
-  });
-
-  const mapped = utils.stripTrailingHardline(
-    utils.mapDoc(html, (currentDoc) => {
-      if (typeof currentDoc !== "string") {
-        return currentDoc;
-      }
-
-      let result: builders.Doc = currentDoc;
-
-      Object.keys(node.children).forEach(
-        (key) =>
-          (result = doc.utils.mapDoc(result, (docNode) =>
-            typeof docNode !== "string" || !docNode.includes(key)
-              ? docNode
-              : builders.concat([
-                  docNode.substring(0, docNode.indexOf(key)),
-                  path.call(print, "children", key),
-                  docNode.substring(docNode.indexOf(key) + key.length),
-                ])
-          ))
+    if (hasPrettierIgnoreLine(node)) {
+      return options.originalText.substring(
+        options.locStart(node),
+        options.locEnd(node),
       );
+    }
 
-      return result;
-    })
-  );
+    if (node.type !== "block" && node.type !== "root") {
+      return undefined;
+    }
 
-  if (isRoot(node)) {
-    return builders.concat([mapped, builders.hardline]);
-  }
+    const html = await textToDoc(node.aliasedContent, {
+      ...options,
+      parser: "html",
+      parentParser: "go-template",
+    });
 
-  const startStatement = path.call(print, "start");
-  const endStatement = node.end ? path.call(print, "end") : "";
+    const mapped = utils.stripTrailingHardline(
+      utils.mapDoc(html, (currentDoc) => {
+        if (typeof currentDoc !== "string") {
+          return currentDoc;
+        }
 
-  if (isPrettierIgnoreBlock(node)) {
-    return builders.concat([
-      utils.removeLines(path.call(print, "start")),
-      printPlainBlock(node.content),
-      endStatement,
-    ]);
-  }
+        let result: builders.Doc = currentDoc;
 
-  const content = node.aliasedContent.trim()
-    ? builders.indent(builders.concat([builders.softline, mapped]))
-    : "";
+        Object.keys(node.children).forEach(
+          (key) =>
+            (result = doc.utils.mapDoc(result, (docNode) =>
+              typeof docNode !== "string" || !docNode.includes(key)
+                ? docNode
+                : [
+                    docNode.substring(0, docNode.indexOf(key)),
+                    path.call(print, "children", key),
+                    docNode.substring(docNode.indexOf(key) + key.length),
+                  ],
+            )),
+        );
 
-  const result = builders.concat([
-    startStatement,
-    content,
-    builders.softline,
-    endStatement,
-  ]);
+        return result;
+      }),
+    );
 
-  const emptyLine =
-    !!node.end && isFollowedByEmptyLine(node.end, options.originalText)
-      ? builders.softline
+    if (isRoot(node)) {
+      return [mapped, builders.hardline];
+    }
+
+    const startStatement = path.call(print, "start");
+    const endStatement = node.end ? path.call(print, "end") : "";
+
+    if (isPrettierIgnoreBlock(node)) {
+      return [
+        utils.removeLines(path.call(print, "start")),
+        printPlainBlock(node.content),
+        endStatement,
+      ];
+    }
+
+    const content = node.aliasedContent.trim()
+      ? builders.indent([builders.softline, mapped])
       : "";
 
-  if (isMultiBlock(node.parent)) {
-    return builders.concat([result, emptyLine]);
-  }
+    const result = [startStatement, content, builders.softline, endStatement];
 
-  return builders.group(builders.concat([builders.group(result), emptyLine]), {
-    shouldBreak: !!node.end && hasNodeLinebreak(node.end, options.originalText),
-  });
+    const emptyLine =
+      !!node.end && isFollowedByEmptyLine(node.end, options.originalText)
+        ? builders.softline
+        : "";
+
+    if (isMultiBlock(node.parent)) {
+      return [result, emptyLine];
+    }
+
+    return builders.group([builders.group(result), emptyLine], {
+      shouldBreak:
+        !!node.end && hasNodeLinebreak(node.end, options.originalText),
+    });
+  };
 };
 
 type PrintFn = (path: FastPath<GoNode>) => builders.Doc;
@@ -201,9 +196,9 @@ type PrintFn = (path: FastPath<GoNode>) => builders.Doc;
 function printMultiBlock(
   node: GoMultiBlock,
   path: FastPath<GoNode>,
-  print: PrintFn
+  print: PrintFn,
 ): builders.Doc {
-  return builders.concat([...path.map(print, "blocks")]);
+  return [...path.map(print, "blocks")];
 }
 
 function isFollowedByNode(node: GoInline): boolean {
@@ -227,7 +222,7 @@ function printInline(
   node: GoInline,
   path: FastPath<GoNode>,
   options: ExtendedParserOptions,
-  print: PrintFn
+  print: PrintFn,
 ): builders.Doc {
   const isBlockNode = isBlockEnd(node) || isBlockStart(node);
   const emptyLine =
@@ -242,7 +237,7 @@ function printInline(
     }),
   ];
 
-  return builders.group(builders.concat([...result, emptyLine]), {
+  return builders.group([...result, emptyLine], {
     shouldBreak: hasNodeLinebreak(node, options.originalText) && !isBlockNode,
   });
 }
@@ -263,7 +258,7 @@ function printStatement(
   delimiter: { start: GoInlineStartDelimiter; end: GoInlineEndDelimiter } = {
     start: "",
     end: "",
-  }
+  },
 ) {
   const space = addSpaces ? " " : "";
   const shouldBreak = statement.includes("\n");
@@ -274,13 +269,13 @@ function printStatement(
         .split("\n")
         .map((line, _, array) =>
           array.indexOf(line) === array.length - 1
-            ? builders.concat([line.trim(), builders.softline])
-            : builders.indent(builders.concat([line.trim(), builders.softline]))
+            ? [line.trim(), builders.softline]
+            : builders.indent([line.trim(), builders.softline]),
         )
     : [statement.trim()];
 
   return builders.group(
-    builders.concat([
+    [
       "{{",
       delimiter.start,
       space,
@@ -288,8 +283,8 @@ function printStatement(
       shouldBreak ? "" : space,
       delimiter.end,
       "}}",
-    ]),
-    { shouldBreak }
+    ],
+    { shouldBreak },
   );
 }
 
@@ -301,7 +296,7 @@ function hasPrettierIgnoreLine(node: GoNode) {
   const { parent, child } = getFirstBlockParent(node);
 
   const regex = new RegExp(
-    `(?:<!--|{{).*?prettier-ignore.*?(?:-->|}})\n.*${child.id}`
+    `(?:<!--|{{).*?prettier-ignore.*?(?:-->|}})\n.*${child.id}`,
   );
 
   return !!parent.aliasedContent.match(regex);
@@ -353,7 +348,7 @@ function getFirstBlockParent(node: Exclude<GoNode, GoRoot>): {
 
 function printUnformattable(
   node: GoUnformattable,
-  options: ExtendedParserOptions
+  options: ExtendedParserOptions,
 ) {
   const start = options.originalText.lastIndexOf("\n", node.index - 1);
   const line = options.originalText.substring(start, node.index + node.length);
@@ -369,17 +364,15 @@ function printPlainBlock(text: string, hardlines = true): builders.Doc {
   const lines = text.split("\n");
 
   const segments = lines.filter(
-    (value, i) => !(i == 0 || i == lines.length - 1) || !isTextEmpty(value)
+    (value, i) => !(i == 0 || i == lines.length - 1) || !isTextEmpty(value),
   );
 
-  return builders.concat([
-    ...segments.map((content, i) =>
-      builders.concat([
-        hardlines || i ? builders.hardline : "",
-        builders.trim,
-        content,
-      ])
-    ),
+  return [
+    ...segments.map((content, i) => [
+      hardlines || i ? builders.hardline : "",
+      builders.trim,
+      content,
+    ]),
     hardlines ? builders.hardline : "",
-  ]);
+  ];
 }

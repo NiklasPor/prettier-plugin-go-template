@@ -8,8 +8,18 @@ Formatter plugin for go template files. The only peer dependency is [prettier](h
 npm install --save-dev prettier prettier-plugin-go-template
 ```
 
-The following file types are detected automatically:
+Starting with Prettier 3 auto-discovery has been removed. Configuration is required ⬇️
+
+```json
+// .prettierrc
+{
+  "plugins": ["prettier-plugin-organize-attributes"]
+}
+```
+
+The following file types will be detected automatically:
 `.gohtml`, `.gotmpl`, `.go.tmpl`, `.tmpl`, `.tpl`, `.html.tmpl`
+If you want to add support for `.html` read the section on it below the examples.
 
 <table>
 <tr>
@@ -64,13 +74,14 @@ The following file types are detected automatically:
 
 To use it with GoHugo and basic `.html` files, you'll have to override the used parser inside your `.prettierrc` file:
 
-```js
+```json
 {
-  overrides: [
+  "plugins": ["prettier-plugin-organize-attributes"]
+  "overrides": [
     {
-      files: ["*.html"],
-      options: {
-        parser: "go-template",
+      "files": ["*.html"],
+      "options": {
+        "parser": "go-template",
       },
     },
   ],
@@ -130,45 +141,6 @@ Install both globally (`npm i -g`) or locally – otherwise prettier may not pic
   {{/* prettier-ignore-end */}}
 </html>
 ```
-
-## Changelog
-
-### v0.0.13
-
-- Fix formatting issue #84
-
-### v0.0.12
-
-- Fix several formatting issues
-- Improve unformattable script & style detection
-- Huge thanks to @jasikpark for validating & cleaning up the issues 🎉
-
-### v0.0.11
-
-- AST rewrite
-- Fix inline actions
-- If / Else / Else-If support
-- Ignore formatting for blocks with `{{/* prettier-ignore */}}
-- Ignore large code sections with `{{/* prettier-ignore-start */}}...{{/* prettier-ignore-end */}}
-- Tweak general formatting
-- Support for multiline actions
-
-### v0.0.10
-
-- Resolve bug #19: Fix template comments.
-
-### v0.0.9
-
-- Resolve bug of single line if statements.
-
-### v0.0.8
-
-- Go block statements will now be indented accordingly. Except for `else`.
-  - if, range, block, with, define, end
-
-### v0.0.7
-
-- Fix broken shortcodes. Thanks to @alqu for discovering & fixing the bug.
 
 ## Contributors ✨
 
