@@ -76,7 +76,7 @@ To use it with GoHugo and basic `.html` files, you'll have to override the used 
 
 ```json
 {
-  "plugins": ["prettier-plugin-organize-attributes"]
+  "plugins": ["prettier-plugin-go-template"]
   "overrides": [
     {
       "files": ["*.html"],
